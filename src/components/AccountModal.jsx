@@ -38,17 +38,30 @@ export default function AccountModal({ visible, onClose }) {
 
           <View style={styles.section}>
             <Text style={styles.label}>OpenAI API Key</Text>
-            <TextInput
-              style={styles.input}
+            {/* Using standard input to avoid focus issues in Modal on mobile web */}
+            <input
+              type="password"
+              style={{
+                width: '100%',
+                padding: 10,
+                marginBottom: 10,
+                border: '1px solid #ddd',
+                borderRadius: 8,
+                fontSize: 16,
+                boxSizing: 'border-box'
+              }}
               placeholder="sk-..."
               value={apiKey}
-              onChangeText={setApiKey}
-              secureTextEntry
+              onChange={(e) => setApiKey(e.target.value)}
             />
             <TouchableOpacity style={styles.saveButton} onPress={handleSaveKey}>
               <Text style={styles.saveButtonText}>Save Key</Text>
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity style={styles.refreshButton} onPress={() => window.location.reload()}>
+            <Text style={styles.refreshButtonText}>Refresh App</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutText}>Log Out</Text>
@@ -116,6 +129,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  refreshButton: {
+    backgroundColor: '#34C759',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    marginBottom: 10,
+    width: '100%',
+    alignItems: 'center',
+  },
+  refreshButtonText: {
     color: '#fff',
     fontWeight: 'bold',
   },
