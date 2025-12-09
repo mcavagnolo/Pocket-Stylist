@@ -50,7 +50,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     height: '100vh',
+    maxHeight: '100dvh',
     backgroundColor: '#f5f5f5',
+    overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
@@ -61,6 +63,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
     paddingTop: 15, // Adjust for status bar if needed
+    zIndex: 10,
   },
   headerTitle: {
     fontSize: 18,
@@ -73,6 +76,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingBottom: 60, // Space for NavBar
+    overflow: 'hidden',
   },
 });
 

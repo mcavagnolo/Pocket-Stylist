@@ -9,7 +9,6 @@ export default function NavBar() {
   const tabs = [
     { name: 'Home', path: '/' },
     { name: 'Closet', path: '/closet' },
-    { name: 'Add', path: '/camera' },
     { name: 'Style', path: '/outfits' },
     { name: 'Plan', path: '/schedule' },
   ];

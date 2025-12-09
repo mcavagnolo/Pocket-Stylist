@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity } from 'react-native';
+import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
 
 const numColumns = 2;
@@ -8,6 +9,7 @@ const itemWidth = (screenWidth - 40) / numColumns; // 40 is padding
 
 export default function Closet() {
   const { items, isItemAvailable } = useCloset();
+  const navigate = useNavigate();
 
   const renderItem = ({ item }) => {
     const available = isItemAvailable(item);
@@ -24,7 +26,12 @@ export default function Closet() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Virtual Dressing Room</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Virtual Closet</Text>
+        <TouchableOpacity style={styles.addButton} onPress={() => navigate('/camera')}>
+          <Text style={styles.addButtonText}>+ Add</Text>
+        </TouchableOpacity>
+      </View>
       <FlatList
         data={items}
         renderItem={renderItem}
@@ -42,11 +49,26 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#fff',
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
+  },
+  addButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+  },
+  addButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   listContent: {
     paddingBottom: 20,

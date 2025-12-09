@@ -60,7 +60,7 @@ export default function Outfits() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Get Styled</Text>
+      <Text style={styles.title}>Virtual Dressing Room</Text>
 
       <View style={styles.form}>
         <Text style={styles.label}>Destination / Occasion</Text>
