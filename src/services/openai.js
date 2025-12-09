@@ -2,11 +2,21 @@ import OpenAI from 'openai';
 
 // Initialize OpenAI client
 // Note: In a production app, you should proxy these requests through a backend
-// to avoid exposing your API key. For this PWA prototype, we'll use the key from env.
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true // Required for client-side usage
-});
+// to avoid exposing your API key. For this PWA prototype, we'll use the key from env or localStorage.
+const getApiKey = () => {
+  return import.meta.env.VITE_OPENAI_API_KEY || localStorage.getItem('openai_api_key');
+};
+
+const getClient = () => {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error("OpenAI API Key not found. Please add it in the Account settings.");
+  }
+  return new OpenAI({
+    apiKey: apiKey,
+    dangerouslyAllowBrowser: true // Required for client-side usage
+  });
+};
 
 /**
  * Analyzes an image of a clothing item to extract metadata.
@@ -15,6 +25,7 @@ const openai = new OpenAI({
  */
 export async function analyzeClothingItem(base64Image) {
   try {
+    const openai = getClient();
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -81,6 +92,7 @@ export async function generateOutfitSuggestions(availableItems, criteria) {
       Return the result as a JSON object with a key "outfits" containing an array of the 3 suggestions.
     `;
 
+    const openai = getClient();
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [

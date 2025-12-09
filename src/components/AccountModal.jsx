@@ -1,9 +1,20 @@
-import React from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { logout, auth } from '../services/firebase';
 
 export default function AccountModal({ visible, onClose }) {
   const user = auth.currentUser;
+  const [apiKey, setApiKey] = useState('');
+
+  useEffect(() => {
+    const storedKey = localStorage.getItem('openai_api_key');
+    if (storedKey) setApiKey(storedKey);
+  }, []);
+
+  const handleSaveKey = () => {
+    localStorage.setItem('openai_api_key', apiKey);
+    alert('API Key saved!');
+  };
 
   const handleLogout = async () => {
     try {
@@ -23,6 +34,20 @@ export default function AccountModal({ visible, onClose }) {
           <View style={styles.info}>
             <Text style={styles.label}>Email</Text>
             <Text style={styles.value}>{user?.email}</Text>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.label}>OpenAI API Key</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="sk-..."
+              value={apiKey}
+              onChangeText={setApiKey}
+              secureTextEntry
+            />
+            <TouchableOpacity style={styles.saveButton} onPress={handleSaveKey}>
+              <Text style={styles.saveButtonText}>Save Key</Text>
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -63,6 +88,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     alignItems: 'center',
   },
+  section: {
+    width: '100%',
+    marginBottom: 20,
+  },
   label: {
     color: '#666',
     fontSize: 12,
@@ -71,6 +100,24 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+    width: '100%',
+  },
+  saveButton: {
+    backgroundColor: '#007AFF',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   logoutButton: {
     backgroundColor: '#FF3B30',
