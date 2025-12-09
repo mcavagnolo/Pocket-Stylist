@@ -27,8 +27,9 @@ export default function AccountModal({ visible, onClose }) {
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
-        <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
+      <View style={styles.overlay}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+        <View style={styles.modalContent}>
           <Text style={styles.title}>Account</Text>
           
           <View style={styles.info}>
@@ -71,7 +72,7 @@ export default function AccountModal({ visible, onClose }) {
             <Text style={styles.closeText}>Close</Text>
           </TouchableOpacity>
         </View>
-      </TouchableOpacity>
+      </View>
     </Modal>
   );
 }

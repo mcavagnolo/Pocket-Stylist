@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, ScrollView, TextInput } from 'react-native';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
 import { analyzeClothingItem } from '../services/openai';
 
@@ -11,6 +11,14 @@ export default function CameraPage() {
   const fileInputRef = useRef(null);
   const { addItem } = useCloset();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.image) {
+      setImage(location.state.image);
+      analyzeImage(location.state.image);
+    }
+  }, []);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];

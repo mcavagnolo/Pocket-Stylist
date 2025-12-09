@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity } from 'react-native';
 import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
@@ -10,6 +10,18 @@ const itemWidth = (screenWidth - 40) / numColumns; // 40 is padding
 export default function Closet() {
   const { items, isItemAvailable } = useCloset();
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        navigate('/camera', { state: { image: reader.result } });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const renderItem = ({ item }) => {
     const available = isItemAvailable(item);
@@ -28,9 +40,17 @@ export default function Closet() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Virtual Closet</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => navigate('/camera')}>
+        <TouchableOpacity style={styles.addButton} onPress={() => fileInputRef.current.click()}>
           <Text style={styles.addButtonText}>+ Add</Text>
         </TouchableOpacity>
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
       </View>
       <FlatList
         data={items}
