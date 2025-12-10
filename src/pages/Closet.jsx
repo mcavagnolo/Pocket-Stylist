@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity, Modal } from 'react-native';
 import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
 
@@ -10,11 +10,14 @@ const itemWidth = (screenWidth - 40) / numColumns; // 40 is padding
 export default function Closet() {
   const { items, isItemAvailable } = useCloset();
   const navigate = useNavigate();
-  const fileInputRef = useRef(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const cameraInputRef = useRef(null);
+  const libraryInputRef = useRef(null);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
+      setModalVisible(false);
       const reader = new FileReader();
       reader.onloadend = () => {
         navigate('/camera', { state: { image: reader.result } });
@@ -40,18 +43,27 @@ export default function Closet() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Virtual Closet</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => fileInputRef.current.click()}>
+        <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
           <Text style={styles.addButtonText}>+ Add</Text>
         </TouchableOpacity>
+        
         <input
           type="file"
           accept="image/*"
           capture="environment"
-          ref={fileInputRef}
+          ref={cameraInputRef}
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
+        <input
+          type="file"
+          accept="image/*"
+          ref={libraryInputRef}
           style={{ display: 'none' }}
           onChange={handleFileChange}
         />
       </View>
+      
       <FlatList
         data={items}
         renderItem={renderItem}
@@ -59,6 +71,47 @@ export default function Closet() {
         numColumns={numColumns}
         contentContainerStyle={styles.listContent}
       />
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalBackdrop} onPress={() => setModalVisible(false)} />
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add New Item</Text>
+            
+            <TouchableOpacity 
+              style={styles.modalButton} 
+              onPress={() => {
+                setModalVisible(false);
+                cameraInputRef.current.click();
+              }}
+            >
+              <Text style={styles.modalButtonText}>Take Photo</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.modalButton} 
+              onPress={() => {
+                setModalVisible(false);
+                libraryInputRef.current.click();
+              }}
+            >
+              <Text style={styles.modalButtonText}>Choose from Library</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.modalButton, styles.cancelButton]} 
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -124,5 +177,49 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 12,
     marginTop: 5,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  modalContent: {
+    width: '80%',
+    maxWidth: 300,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  modalButton: {
+    width: '100%',
+    padding: 15,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    fontSize: 16,
+    color: '#007AFF',
+  },
+  cancelButton: {
+    backgroundColor: 'transparent',
+    marginTop: 5,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    color: '#FF3B30',
+    fontWeight: 'bold',
   },
 });
