@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Image } from 'react-native';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { HashRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { useSwipeable } from 'react-swipeable';
+import { FaUserCircle } from 'react-icons/fa';
 
 import Home from './pages/Home';
 import Closet from './pages/Closet';
@@ -12,39 +14,68 @@ import Login from './pages/Login';
 import NavBar from './components/NavBar';
 import AccountModal from './components/AccountModal';
 
-function App() {
+function AppContent() {
   const { currentUser } = useAuth();
   const [showAccount, setShowAccount] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const routes = ['/', '/closet', '/outfits', '/schedule'];
+
+  const handlers = useSwipeable({
+    onSwipedLeft: () => {
+      const currentIndex = routes.indexOf(location.pathname);
+      if (currentIndex < routes.length - 1) {
+        navigate(routes[currentIndex + 1]);
+      }
+    },
+    onSwipedRight: () => {
+      const currentIndex = routes.indexOf(location.pathname);
+      if (currentIndex > 0) {
+        navigate(routes[currentIndex - 1]);
+      }
+    },
+    preventScrollOnSwipe: true,
+    trackMouse: true
+  });
 
   if (!currentUser) {
     return <Login />;
   }
 
   return (
-    <Router>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Image source={{ uri: '/favicon-32x32.png' }} style={{ width: 32, height: 32, marginRight: 10 }} />
-            <Text style={styles.headerTitle}>Pocket Stylist</Text>
-          </View>
-          <TouchableOpacity onPress={() => setShowAccount(true)}>
-            <Text style={styles.accountButton}>Account</Text>
-          </TouchableOpacity>
+    <View style={styles.container} {...handlers}>
+      <View style={styles.header}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+          <Image 
+            source={{ uri: '/banner.png' }} 
+            style={{ width: 200, height: 40, resizeMode: 'contain' }} 
+          />
         </View>
-
-        <View style={styles.content}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/closet" element={<Closet />} />
-            <Route path="/camera" element={<CameraPage />} />
-            <Route path="/outfits" element={<Outfits />} />
-            <Route path="/schedule" element={<Schedule />} />
-          </Routes>
-        </View>
-        <NavBar />
-        <AccountModal visible={showAccount} onClose={() => setShowAccount(false)} />
+        <TouchableOpacity onPress={() => setShowAccount(true)}>
+          <FaUserCircle size={28} color="#007AFF" />
+        </TouchableOpacity>
       </View>
+
+      <View style={styles.content}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/closet" element={<Closet />} />
+          <Route path="/camera" element={<CameraPage />} />
+          <Route path="/outfits" element={<Outfits />} />
+          <Route path="/schedule" element={<Schedule />} />
+        </Routes>
+      </View>
+      <NavBar />
+      <AccountModal visible={showAccount} onClose={() => setShowAccount(false)} />
+    </View>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }
