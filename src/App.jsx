@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Image } from 'react-native';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 
@@ -24,7 +24,10 @@ function App() {
     <Router>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Pocket Stylist</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Image source={{ uri: '/favicon-32x32.png' }} style={{ width: 32, height: 32, marginRight: 10 }} />
+            <Text style={styles.headerTitle}>Pocket Stylist</Text>
+          </View>
           <TouchableOpacity onPress={() => setShowAccount(true)}>
             <Text style={styles.accountButton}>Account</Text>
           </TouchableOpacity>

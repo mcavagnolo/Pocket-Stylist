@@ -1,19 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { logout, auth } from '../services/firebase';
+import { saveUserSettings, getUserSettings } from '../services/db';
 
 export default function AccountModal({ visible, onClose }) {
   const user = auth.currentUser;
   const [apiKey, setApiKey] = useState('');
 
   useEffect(() => {
-    const storedKey = localStorage.getItem('openai_api_key');
-    if (storedKey) setApiKey(storedKey);
-  }, []);
+    if (user) {
+      getUserSettings(user.uid).then(settings => {
+        if (settings?.openai_api_key) {
+          setApiKey(settings.openai_api_key);
+          // Sync to local storage for immediate use by openai service if needed
+          localStorage.setItem('openai_api_key', settings.openai_api_key);
+        } else {
+          const storedKey = localStorage.getItem('openai_api_key');
+          if (storedKey) setApiKey(storedKey);
+        }
+      });
+    }
+  }, [user, visible]);
 
-  const handleSaveKey = () => {
-    localStorage.setItem('openai_api_key', apiKey);
-    alert('API Key saved!');
+  const handleSaveKey = async () => {
+    if (user) {
+      await saveUserSettings(user.uid, { openai_api_key: apiKey });
+      localStorage.setItem('openai_api_key', apiKey);
+      alert('API Key saved to account!');
+    }
   };
 
   const handleLogout = async () => {

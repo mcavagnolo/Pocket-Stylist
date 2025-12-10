@@ -73,7 +73,9 @@ export async function generateOutfitSuggestions(availableItems, criteria) {
       type: item.type,
       color: item.color,
       tags: item.tags,
-      style: item.style
+      style: item.style,
+      rating: item.rating || 3, // Default 3/5
+      wearCount: item.wearCount || 0
     }));
 
     const prompt = `
@@ -84,6 +86,11 @@ export async function generateOutfitSuggestions(availableItems, criteria) {
       - Destination: ${criteria.destination}
       - Temperature: ${criteria.temperature}
       - Style Preference: ${criteria.style}
+
+      Rules:
+      1. Prioritize items with higher 'rating'.
+      2. Consider 'wearCount' - if an item has a high rating but low wear count, suggest it more.
+      3. Ensure the outfits are appropriate for the temperature and destination.
 
       Please select 3 distinct outfits. For each outfit, provide:
       1. A short summary explaining why it fits the criteria.

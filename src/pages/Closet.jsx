@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
 
@@ -8,16 +8,19 @@ const screenWidth = Dimensions.get('window').width;
 const itemWidth = (screenWidth - 40) / numColumns; // 40 is padding
 
 export default function Closet() {
-  const { items, isItemAvailable } = useCloset();
+  const { items, isItemAvailable, deleteItem, updateItem } = useCloset();
   const navigate = useNavigate();
-  const [modalVisible, setModalVisible] = useState(false);
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  
   const cameraInputRef = useRef(null);
   const libraryInputRef = useRef(null);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setModalVisible(false);
+      setAddModalVisible(false);
       const reader = new FileReader();
       reader.onloadend = () => {
         navigate('/camera', { state: { image: reader.result } });
@@ -26,16 +29,35 @@ export default function Closet() {
     }
   };
 
+  const handleItemPress = (item) => {
+    setSelectedItem(item);
+    setDetailModalVisible(true);
+  };
+
+  const handleDelete = async () => {
+    if (confirm("Are you sure you want to delete this item?")) {
+      await deleteItem(selectedItem.id);
+      setDetailModalVisible(false);
+    }
+  };
+
+  const handleRating = async (rating) => {
+    await updateItem(selectedItem.id, { rating });
+    setSelectedItem(prev => ({ ...prev, rating }));
+  };
+
   const renderItem = ({ item }) => {
     const available = isItemAvailable(item);
     return (
-      <View style={[styles.itemContainer, !available && styles.unavailableItem]}>
-        <Image source={{ uri: item.imageUri }} style={styles.image} resizeMode="cover" />
-        <View style={styles.infoContainer}>
-          <Text style={styles.itemType}>{item.type}</Text>
-          {!available && <Text style={styles.unavailableText}>In Wash</Text>}
+      <TouchableOpacity onPress={() => handleItemPress(item)}>
+        <View style={[styles.itemContainer, !available && styles.unavailableItem]}>
+          <Image source={{ uri: item.imageUri }} style={styles.image} resizeMode="cover" />
+          <View style={styles.infoContainer}>
+            <Text style={styles.itemType}>{item.type}</Text>
+            {!available && <Text style={styles.unavailableText}>In Wash</Text>}
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -43,7 +65,7 @@ export default function Closet() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Virtual Closet</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+        <TouchableOpacity style={styles.addButton} onPress={() => setAddModalVisible(true)}>
           <Text style={styles.addButtonText}>+ Add</Text>
         </TouchableOpacity>
         
@@ -72,21 +94,22 @@ export default function Closet() {
         contentContainerStyle={styles.listContent}
       />
 
+      {/* Add Item Modal */}
       <Modal
         animationType="fade"
         transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+        visible={addModalVisible}
+        onRequestClose={() => setAddModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <TouchableOpacity style={styles.modalBackdrop} onPress={() => setModalVisible(false)} />
+          <TouchableOpacity style={styles.modalBackdrop} onPress={() => setAddModalVisible(false)} />
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Add New Item</Text>
             
             <TouchableOpacity 
               style={styles.modalButton} 
               onPress={() => {
-                setModalVisible(false);
+                setAddModalVisible(false);
                 cameraInputRef.current.click();
               }}
             >
@@ -96,7 +119,7 @@ export default function Closet() {
             <TouchableOpacity 
               style={styles.modalButton} 
               onPress={() => {
-                setModalVisible(false);
+                setAddModalVisible(false);
                 libraryInputRef.current.click();
               }}
             >
@@ -105,11 +128,52 @@ export default function Closet() {
 
             <TouchableOpacity 
               style={[styles.modalButton, styles.cancelButton]} 
-              onPress={() => setModalVisible(false)}
+              onPress={() => setAddModalVisible(false)}
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
+        </View>
+      </Modal>
+
+      {/* Item Detail Modal */}
+      <Modal
+        animationType="slide"
+        visible={detailModalVisible}
+        onRequestClose={() => setDetailModalVisible(false)}
+      >
+        <View style={styles.detailContainer}>
+          {selectedItem && (
+            <ScrollView>
+              <Image source={{ uri: selectedItem.imageUri }} style={styles.detailImage} resizeMode="contain" />
+              
+              <View style={styles.detailInfo}>
+                <Text style={styles.detailTitle}>{selectedItem.type}</Text>
+                <Text style={styles.detailText}>Color: {selectedItem.color}</Text>
+                <Text style={styles.detailText}>Style: {selectedItem.style}</Text>
+                <Text style={styles.detailText}>Worn: {selectedItem.wearCount || 0} times</Text>
+                
+                <Text style={styles.sectionTitle}>Rating</Text>
+                <View style={styles.ratingContainer}>
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <TouchableOpacity key={star} onPress={() => handleRating(star)}>
+                      <Text style={[styles.star, (selectedItem.rating || 0) >= star ? styles.starFilled : styles.starEmpty]}>
+                        ★
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+                  <Text style={styles.deleteButtonText}>Delete Item</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.closeDetailButton} onPress={() => setDetailModalVisible(false)}>
+                  <Text style={styles.closeDetailButtonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          )}
         </View>
       </Modal>
     </View>
@@ -221,5 +285,69 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#FF3B30',
     fontWeight: 'bold',
+  },
+  detailContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  detailImage: {
+    width: '100%',
+    height: 400,
+    backgroundColor: '#f0f0f0',
+  },
+  detailInfo: {
+    padding: 20,
+  },
+  detailTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textTransform: 'capitalize',
+  },
+  detailText: {
+    fontSize: 16,
+    marginBottom: 5,
+    color: '#333',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  star: {
+    fontSize: 30,
+    marginRight: 5,
+  },
+  starFilled: {
+    color: '#FFD700',
+  },
+  starEmpty: {
+    color: '#ddd',
+  },
+  deleteButton: {
+    backgroundColor: '#FF3B30',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  closeDetailButton: {
+    padding: 15,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  closeDetailButtonText: {
+    color: '#007AFF',
+    fontSize: 16,
   },
 });

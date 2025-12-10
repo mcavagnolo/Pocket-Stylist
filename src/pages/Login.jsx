@@ -35,6 +35,10 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
+      <Image 
+        source={{ uri: '/pwa-192x192.png' }} 
+        style={{ width: 100, height: 100, marginBottom: 20, alignSelf: 'center' }} 
+      />
       <View style={styles.card}>
         <Text style={styles.title}>
           {resetMode ? 'Reset Password' : (isLogin ? 'Pocket Stylist Login' : 'Create Account')}
