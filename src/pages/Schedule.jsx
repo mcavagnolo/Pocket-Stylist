@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, ActivityIndicator, TextInput } from 'react-native';
 import { useCloset } from '../context/ClosetContext';
 import { getWeatherForecast, getWeatherDescription } from '../services/weather';
 import { generateOutfitSuggestions } from '../services/openai';
@@ -11,7 +11,7 @@ export default function Schedule() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
-  const [criteria, setCriteria] = useState({ destination: 'Casual', style: 'Casual' });
+  const [criteria, setCriteria] = useState({ destination: '', style: '', temperature: '' });
 
   useEffect(() => {
     const fetchWeather = async () => {
@@ -55,6 +55,7 @@ export default function Schedule() {
   const openGenerator = (date) => {
     setSelectedDate(date);
     setSuggestions([]);
+    setCriteria({ destination: '', style: '', temperature: '' });
     setModalVisible(true);
   };
 
@@ -68,7 +69,7 @@ export default function Schedule() {
       
       const result = await generateOutfitSuggestions(availableItems, {
         destination: criteria.destination,
-        temperature: tempStr,
+        temperature: criteria.temperature || tempStr,
         style: criteria.style
       });
       
@@ -124,7 +125,7 @@ export default function Schedule() {
                     if (!item) return null;
                     return (
                       <View key={itemId} style={styles.itemPreview}>
-                        <Image source={{ uri: item.imageUri }} style={styles.itemImage} />
+                        <Image source={{ uri: item.imageUri || item.image }} style={styles.itemImage} />
                         <Text style={styles.itemType}>{item.type}</Text>
                       </View>
                     );
@@ -148,47 +149,77 @@ export default function Schedule() {
 
       <Modal visible={modalVisible} animationType="slide" onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Generate for {selectedDate}</Text>
+          <Text style={styles.modalTitle}>Plan for {selectedDate}</Text>
           
-          {weather[selectedDate] && (
-            <Text style={styles.modalWeather}>
-              Forecast: {weather[selectedDate].max}° / {weather[selectedDate].min}° - {getWeatherDescription(weather[selectedDate].code)}
-            </Text>
-          )}
+          <ScrollView style={{ flex: 1 }}>
+            <View style={{ marginBottom: 20 }}>
+              <Text style={styles.label}>Destination / Occasion</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. Work, Date Night, Gym"
+                value={criteria.destination}
+                onChangeText={(text) => setCriteria(prev => ({ ...prev, destination: text }))}
+              />
+              
+              <Text style={styles.label}>Temperature</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. 75°F, Cold, Rainy (Leave blank to use forecast)"
+                value={criteria.temperature}
+                onChangeText={(text) => setCriteria(prev => ({ ...prev, temperature: text }))}
+              />
 
-          {suggestions.length === 0 ? (
-            <View style={styles.criteriaForm}>
-              <TouchableOpacity style={styles.genButton} onPress={handleGenerate} disabled={loading}>
-                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.genButtonText}>Generate 3 Outfits</Text>}
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                <Text style={styles.closeButtonText}>Cancel</Text>
-              </TouchableOpacity>
+              <Text style={styles.label}>Style Preference</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. Casual, Chic, Edgy"
+                value={criteria.style}
+                onChangeText={(text) => setCriteria(prev => ({ ...prev, style: text }))}
+              />
             </View>
-          ) : (
-            <ScrollView style={styles.suggestionsList}>
-              {suggestions.map((outfit, index) => (
-                <View key={index} style={styles.suggestionCard}>
-                  <Text style={styles.suggestionSummary}>{outfit.summary}</Text>
-                  <ScrollView horizontal>
-                    {outfit.itemIds.map(id => {
-                      const item = getItemDetails(id);
-                      if (!item) return null;
-                      return (
-                        <Image key={id} source={{ uri: item.imageUri }} style={styles.smallImage} />
-                      );
-                    })}
-                  </ScrollView>
-                  <TouchableOpacity style={styles.selectButton} onPress={() => handleSelectOutfit(outfit)}>
-                    <Text style={styles.selectButtonText}>Select This Outfit</Text>
-                  </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.genButton, loading && { opacity: 0.7 }]}
+              onPress={handleGenerate}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.genButtonText}>Generate Suggestions</Text>
+              )}
+            </TouchableOpacity>
+
+            {suggestions.map((outfit, index) => (
+              <TouchableOpacity 
+                key={index} 
+                style={styles.suggestionCard}
+                onPress={() => handleSelectOutfit(outfit)}
+              >
+                <Text style={styles.suggestionSummary}>{outfit.reason || outfit.summary}</Text>
+                <ScrollView horizontal>
+                  {outfit.itemIds.map(id => {
+                    const item = getItemDetails(id);
+                    if (!item) return null;
+                    return (
+                      <Image 
+                        key={id} 
+                        source={{ uri: item.imageUri || item.image }} 
+                        style={styles.smallImage} 
+                      />
+                    );
+                  })}
+                </ScrollView>
+                <View style={styles.selectButton}>
+                  <Text style={styles.selectButtonText}>Select This Outfit</Text>
                 </View>
-              ))}
-              <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                <Text style={styles.closeButtonText}>Close</Text>
               </TouchableOpacity>
-            </ScrollView>
-          )}
+            ))}
+          </ScrollView>
+
+          <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
     </ScrollView>
