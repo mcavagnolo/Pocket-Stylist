@@ -51,7 +51,7 @@ export default function Closet() {
     return (
       <TouchableOpacity onPress={() => handleItemPress(item)}>
         <View style={[styles.itemContainer, !available && styles.unavailableItem]}>
-          <Image source={{ uri: item.imageUri }} style={styles.image} resizeMode="cover" />
+          <Image source={{ uri: item.imageUri || item.image }} style={styles.image} resizeMode="cover" />
           <View style={styles.infoContainer}>
             <Text style={styles.itemType}>{item.type}</Text>
             {!available && <Text style={styles.unavailableText}>In Wash</Text>}
@@ -92,6 +92,7 @@ export default function Closet() {
         keyExtractor={(item) => item.id}
         numColumns={numColumns}
         contentContainerStyle={styles.listContent}
+        ListEmptyComponent={<Text style={styles.emptyText}>No items in closet. Add some!</Text>}
       />
 
       {/* Add Item Modal */}
@@ -349,5 +350,11 @@ const styles = StyleSheet.create({
   closeDetailButtonText: {
     color: '#007AFF',
     fontSize: 16,
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 50,
+    fontSize: 18,
+    color: '#999',
   },
 });

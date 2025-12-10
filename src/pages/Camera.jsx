@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Scr
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
 import { analyzeClothingItem } from '../services/openai';
+import { resizeImage } from '../utils/image';
 
 export default function CameraPage() {
   const [image, setImage] = useState(null);
@@ -15,8 +16,12 @@ export default function CameraPage() {
 
   useEffect(() => {
     if (location.state?.image) {
-      setImage(location.state.image);
-      analyzeImage(location.state.image);
+      const processImage = async () => {
+        const resized = await resizeImage(location.state.image);
+        setImage(resized);
+        analyzeImage(resized);
+      };
+      processImage();
     }
   }, []);
 
@@ -24,9 +29,10 @@ export default function CameraPage() {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result);
-        analyzeImage(reader.result);
+      reader.onloadend = async () => {
+        const resized = await resizeImage(reader.result);
+        setImage(resized);
+        analyzeImage(resized);
       };
       reader.readAsDataURL(file);
     }
