@@ -4,6 +4,7 @@ import { HashRouter as Router, Routes, Route, useNavigate, useLocation } from 'r
 import { useAuth } from './context/AuthContext';
 import { useSwipeable } from 'react-swipeable';
 import { FaUserCircle } from 'react-icons/fa';
+import banner from './assets/banner.png';
 
 import Home from './pages/Home';
 import Closet from './pages/Closet';
@@ -35,8 +36,9 @@ function AppContent() {
         navigate(routes[currentIndex - 1]);
       }
     },
-    preventScrollOnSwipe: true,
-    trackMouse: true
+    preventScrollOnSwipe: false, // Allow scrolling
+    trackMouse: true,
+    delta: 50 // Require a larger swipe to trigger navigation
   });
 
   if (!currentUser) {
@@ -44,11 +46,11 @@ function AppContent() {
   }
 
   return (
-    <View style={styles.container} {...handlers}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
           <Image 
-            source={{ uri: '/banner.png' }} 
+            source={{ uri: banner }} 
             style={{ width: 200, height: 40, resizeMode: 'contain' }} 
           />
         </View>
@@ -57,7 +59,7 @@ function AppContent() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.content}>
+      <View style={styles.content} {...handlers}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/closet" element={<Closet />} />
@@ -87,6 +89,11 @@ const styles = StyleSheet.create({
     maxHeight: '100dvh',
     backgroundColor: '#f5f5f5',
     overflow: 'hidden',
+    position: 'fixed', // Ensure it stays fixed
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   header: {
     flexDirection: 'row',
@@ -98,6 +105,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
     paddingTop: 15, // Adjust for status bar if needed
     zIndex: 10,
+    height: 70, // Fixed height
   },
   headerTitle: {
     fontSize: 18,
@@ -110,7 +118,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingBottom: 60, // Space for NavBar
-    overflow: 'hidden',
+    overflow: 'hidden', // Let children handle scrolling
   },
 });
 
