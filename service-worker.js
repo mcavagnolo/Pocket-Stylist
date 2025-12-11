@@ -1,5 +1,5 @@
-const CACHE_NAME = 'pocket-stylist-v2';
-const IMAGE_CACHE_NAME = 'pocket-stylist-images-v2';
+const CACHE_NAME = 'pocket-stylist-v3';
+const IMAGE_CACHE_NAME = 'pocket-stylist-images-v3';
 
 const ASSETS_TO_CACHE = [
   '/',
@@ -38,29 +38,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Handle Firebase Storage Images
+  // SKIP Firebase Storage Images - Let the browser handle them naturally
+  // The Service Worker interception can cause timeouts/CORS issues with opaque responses
   if (url.hostname.includes('firebasestorage.googleapis.com')) {
-    event.respondWith(
-      caches.open(IMAGE_CACHE_NAME).then((cache) => {
-        return cache.match(event.request).then((response) => {
-          // Return cached response if found
-          if (response) {
-            return response;
-          }
-
-          // Otherwise fetch from network
-          return fetch(event.request).then((networkResponse) => {
-            // Cache the new response
-            // We allow 'opaque' responses (status 0) for cross-origin images (Firebase Storage)
-            if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque')) {
-              cache.put(event.request, networkResponse.clone());
-            }
-            return networkResponse;
-          });
-        });
-      })
-    );
-    return;
+    return; // Fallback to network
   }
 
   // Handle other requests (App Shell)
