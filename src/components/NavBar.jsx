@@ -1,10 +1,19 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { theme } from '../theme';
 
-export default function NavBar() {
+export default function NavBar({ onNavigate }) {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handlePress = (path) => {
+    if (onNavigate) {
+      onNavigate(path);
+    } else {
+      navigate(path);
+    }
+  };
 
   const tabs = [
     { name: 'Home', path: '/' },
@@ -21,7 +30,7 @@ export default function NavBar() {
           <TouchableOpacity
             key={tab.name}
             style={[styles.tab, isActive && styles.activeTab]}
-            onPress={() => navigate(tab.path)}
+            onPress={() => handlePress(tab.path)}
           >
             <Text style={[styles.tabText, isActive && styles.activeTabText]}>
               {tab.name}
@@ -37,9 +46,9 @@ const styles = StyleSheet.create({
   navBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: theme.colors.border,
     paddingBottom: 20, // Safe area for bottom
     paddingTop: 10,
     position: 'absolute',
@@ -53,14 +62,14 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#007AFF',
+    borderBottomColor: theme.colors.highlight,
   },
   tabText: {
-    fontSize: 12,
-    color: '#888',
+    fontSize: 16,
+    color: theme.colors.secondaryText,
   },
   activeTabText: {
-    color: '#007AFF',
+    color: theme.colors.highlight,
     fontWeight: 'bold',
   },
 });

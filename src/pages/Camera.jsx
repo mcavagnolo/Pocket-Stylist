@@ -8,6 +8,7 @@ import { resizeImage } from '../utils/image';
 export default function CameraPage() {
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const fileInputRef = useRef(null);
   const { addItem } = useCloset();
@@ -51,24 +52,59 @@ export default function CameraPage() {
     }
   };
 
-  const handleSave = () => {
-    if (image && analysis) {
-      addItem({
-        imageUri: image,
-        ...analysis,
-        lastWorn: null
-      });
-      navigate('/closet');
+  const handleSave = async () => {
+    if (image && analysis && !saving) {
+      setSaving(true);
+      
+      // Check image size
+      const sizeInBytes = (image.length * 3) / 4;
+      const sizeInKB = sizeInBytes / 1024;
+      console.log(`Attempting to save image. Size: ${sizeInKB.toFixed(2)} KB`);
+
+      try {
+        // Fire and forget - don't await the upload
+        // The context handles the optimistic update immediately
+        addItem({
+          imageUri: image,
+          ...analysis,
+          lastWorn: null
+        }).catch(err => {
+          console.error("Background save failed:", err);
+          // Ideally we would show a toast here, but we've already navigated
+        });
+
+        // Navigate immediately
+        navigate('/closet');
+        
+        // Show a quick feedback toast/alert if needed, or just let the UI speak for itself
+        // alert("Saving in background..."); 
+      } catch (error) {
+        console.error("Failed to save item:", error);
+        alert(`Failed to save item: ${error.message}.`);
+        setSaving(false);
+      }
     }
   };
 
   const handleRetake = () => {
     setImage(null);
     setAnalysis(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.container}>
+      <input
+        type="file"
+        accept="image/*"
+        capture="environment"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
+      
       <Text style={styles.title}>Add New Item</Text>
 
       {!image ? (
@@ -79,14 +115,6 @@ export default function CameraPage() {
           >
             <Text style={styles.buttonText}>Take Photo / Upload</Text>
           </TouchableOpacity>
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            onChange={handleFileChange}
-          />
         </View>
       ) : (
         <View style={styles.previewContainer}>
@@ -99,36 +127,50 @@ export default function CameraPage() {
             </View>
           ) : analysis ? (
             <View style={styles.formContainer}>
-              <Text style={styles.label}>Type:</Text>
-              <TextInput 
-                style={styles.input} 
-                value={analysis.type} 
-                onChangeText={(text) => setAnalysis({...analysis, type: text})}
-              />
-              
-              <Text style={styles.label}>Color:</Text>
-              <TextInput 
-                style={styles.input} 
-                value={analysis.color} 
-                onChangeText={(text) => setAnalysis({...analysis, color: text})}
-              />
+              <View style={styles.rowContainer}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Type</Text>
+                  <TextInput 
+                    style={styles.compactInput} 
+                    value={analysis.type} 
+                    onChangeText={(text) => setAnalysis({...analysis, type: text})}
+                  />
+                </View>
+                
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Color</Text>
+                  <TextInput 
+                    style={styles.compactInput} 
+                    value={analysis.color} 
+                    onChangeText={(text) => setAnalysis({...analysis, color: text})}
+                  />
+                </View>
 
-              <Text style={styles.label}>Style:</Text>
-              <TextInput 
-                style={styles.input} 
-                value={analysis.style} 
-                onChangeText={(text) => setAnalysis({...analysis, style: text})}
-              />
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Style</Text>
+                  <TextInput 
+                    style={styles.compactInput} 
+                    value={analysis.style} 
+                    onChangeText={(text) => setAnalysis({...analysis, style: text})}
+                  />
+                </View>
+              </View>
 
-              <Text style={styles.label}>Tags:</Text>
-              <Text style={styles.tags}>{analysis.tags.join(', ')}</Text>
+              <Text style={styles.label}>Tags</Text>
+              <View style={styles.tagsContainer}>
+                {analysis.tags.map((tag, index) => (
+                  <View key={index} style={styles.tagBadge}>
+                    <Text style={styles.tagText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
 
               <View style={styles.buttonGroup}>
                 <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={handleRetake}>
                   <Text style={styles.secondaryButtonText}>Retake</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.button} onPress={handleSave}>
-                  <Text style={styles.buttonText}>Save to Closet</Text>
+                <TouchableOpacity style={styles.button} onPress={handleSave} disabled={saving}>
+                  <Text style={styles.buttonText}>{saving ? "Saving..." : "Save to Closet"}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -176,22 +218,46 @@ const styles = StyleSheet.create({
   formContainer: {
     width: '100%',
   },
+  rowContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  inputGroup: {
+    width: '30%',
+  },
   label: {
-    fontWeight: 'bold',
-    marginTop: 10,
-    marginBottom: 5,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 10,
-    borderRadius: 5,
-    backgroundColor: '#fff',
-  },
-  tags: {
-    fontStyle: 'italic',
+    fontWeight: '600',
+    fontSize: 12,
     color: '#666',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  compactInput: {
+    borderWidth: 1,
+    borderColor: '#eee',
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+    fontSize: 14,
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     marginBottom: 20,
+    marginTop: 5,
+  },
+  tagBadge: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  tagText: {
+    fontSize: 12,
+    color: '#333',
   },
   buttonGroup: {
     flexDirection: 'row',

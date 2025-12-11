@@ -9,7 +9,11 @@ import {
   deleteDoc, 
   query, 
   where, 
-  getDocs 
+  getDocs,
+  limit,
+  orderBy,
+  startAfter,
+  onSnapshot
 } from 'firebase/firestore';
 
 // User Settings (API Key)
@@ -27,18 +31,59 @@ export const getUserSettings = async (userId) => {
   return null;
 };
 
+// Real-time subscription
+export const subscribeToUserItems = (userId, callback) => {
+  const itemsRef = collection(db, 'users', userId, 'closet');
+  const q = query(itemsRef, orderBy('createdAt', 'desc'));
+  
+  return onSnapshot(q, (snapshot) => {
+    const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    callback(items);
+  });
+};
+
 // Closet Items
 export const addItemToDb = async (userId, item) => {
-  const itemsRef = collection(db, 'users', userId, 'closet');
-  const docRef = await addDoc(itemsRef, item);
-  return { ...item, id: docRef.id };
+  console.log('addItemToDb called for user:', userId);
+  try {
+    // Use setDoc with a generated ID instead of addDoc for better reliability
+    const itemsRef = collection(db, 'users', userId, 'closet');
+    const newDocRef = doc(itemsRef); // Generate ID client-side
+    console.log('Generated ID:', newDocRef.id);
+    
+    console.log('Writing document to Firestore (setDoc)...');
+    await setDoc(newDocRef, item);
+    console.log('Document written successfully');
+    
+    return { ...item, id: newDocRef.id };
+  } catch (error) {
+    console.error('Error in addItemToDb:', error);
+    throw error;
+  }
 };
 
 export const getUserItems = async (userId) => {
   const itemsRef = collection(db, 'users', userId, 'closet');
-  const q = query(itemsRef);
+  const q = query(itemsRef, orderBy('createdAt', 'desc'));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const getPagedUserItems = async (userId, lastDoc = null, pageSize = 12) => {
+  const itemsRef = collection(db, 'users', userId, 'closet');
+  let q;
+  
+  if (lastDoc) {
+    q = query(itemsRef, orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(pageSize));
+  } else {
+    q = query(itemsRef, orderBy('createdAt', 'desc'), limit(pageSize));
+  }
+  
+  const querySnapshot = await getDocs(q);
+  const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+  
+  return { items, lastVisible };
 };
 
 export const updateItemInDb = async (userId, itemId, updates) => {

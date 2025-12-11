@@ -3,8 +3,8 @@
   "short_name": "PocketStylist",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "background_color": "#fff9ec",
+  "theme_color": "#ff8e52",
   "description": "Your personal AI stylist and wardrobe manager.",
   "icons": [
     {

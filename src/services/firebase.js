@@ -1,5 +1,9 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { 
+  initializeFirestore, 
+  persistentLocalCache, 
+  persistentMultipleTabManager 
+} from 'firebase/firestore';
 import { 
   getAuth, 
   createUserWithEmailAndPassword,
@@ -9,6 +13,7 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -19,9 +24,23 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+// Debug config presence
+if (!firebaseConfig.storageBucket) {
+  console.error("CRITICAL: VITE_FIREBASE_STORAGE_BUCKET is missing from environment variables!");
+}
+
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const storage = getStorage(app);
+
+// Initialize Firestore
+// We are temporarily disabling persistent cache to clear out any old bloated data
+// that might be slowing down the app load.
+export const db = initializeFirestore(app, {
+  // localCache: persistentLocalCache({
+  //   tabManager: persistentMultipleTabManager()
+  // })
+});
 
 export const login = (email, password) => {
   return signInWithEmailAndPassword(auth, email, password);

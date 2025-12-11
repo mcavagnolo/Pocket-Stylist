@@ -1,11 +1,62 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity, Modal, ScrollView, Platform } from 'react-native';
 import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
 
 const numColumns = 2;
 const screenWidth = Dimensions.get('window').width;
 const itemWidth = (screenWidth - 40) / numColumns; // 40 is padding
+
+// Cross-platform image component
+const SmartImage = ({ uri, style, alt }) => {
+  // Web: Use HTML img for best performance/caching
+  if (Platform.OS === 'web') {
+    return (
+      <div style={{ ...StyleSheet.flatten(style), overflow: 'hidden' }}>
+        <img 
+          src={uri} 
+          alt={alt}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block'
+          }}
+          loading="lazy"
+          onError={(e) => {
+            e.target.onerror = null; 
+            console.warn('Image failed to load:', uri);
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Native: Use standard React Native Image
+  return (
+    <Image 
+      source={{ uri }} 
+      style={style} 
+      resizeMode="cover" 
+    />
+  );
+};
+
+const ClosetItem = React.memo(({ item, onPress, isAvailable }) => (
+  <TouchableOpacity onPress={() => onPress(item)}>
+    <View style={[styles.itemContainer, !isAvailable && styles.unavailableItem]}>
+      <SmartImage 
+        uri={item.imageUri || item.image} 
+        style={styles.image} 
+        alt={item.type} 
+      />
+      <View style={styles.infoContainer}>
+        <Text style={styles.itemType}>{item.type}</Text>
+        {!isAvailable && <Text style={styles.unavailableText}>In Wash</Text>}
+      </View>
+    </View>
+  </TouchableOpacity>
+));
 
 export default function Closet() {
   const { items, isItemAvailable, deleteItem, updateItem } = useCloset();
@@ -34,32 +85,25 @@ export default function Closet() {
     setDetailModalVisible(true);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (confirm("Are you sure you want to delete this item?")) {
-      await deleteItem(selectedItem.id);
+      deleteItem(selectedItem.id);
       setDetailModalVisible(false);
     }
   };
 
-  const handleRating = async (rating) => {
-    await updateItem(selectedItem.id, { rating });
+  const handleRating = (rating) => {
     setSelectedItem(prev => ({ ...prev, rating }));
+    updateItem(selectedItem.id, { rating });
   };
 
-  const renderItem = ({ item }) => {
-    const available = isItemAvailable(item);
-    return (
-      <TouchableOpacity onPress={() => handleItemPress(item)}>
-        <View style={[styles.itemContainer, !available && styles.unavailableItem]}>
-          <Image source={{ uri: item.imageUri || item.image }} style={styles.image} resizeMode="cover" />
-          <View style={styles.infoContainer}>
-            <Text style={styles.itemType}>{item.type}</Text>
-            {!available && <Text style={styles.unavailableText}>In Wash</Text>}
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  const renderItem = ({ item }) => (
+    <ClosetItem 
+      item={item} 
+      onPress={handleItemPress} 
+      isAvailable={isItemAvailable(item)} 
+    />
+  );
 
   return (
     <View style={styles.container}>

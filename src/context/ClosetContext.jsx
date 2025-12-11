@@ -1,13 +1,14 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { 
-  getUserItems, 
+  subscribeToUserItems,
   addItemToDb, 
   updateItemInDb, 
   deleteItemFromDb,
   getUserSchedule, 
   saveScheduleToDb 
 } from '../services/db';
+import { uploadImageToStorage } from '../services/storage';
 
 const ClosetContext = createContext();
 
@@ -21,21 +22,18 @@ export function ClosetProvider({ children }) {
   const [schedule, setSchedule] = useState({});
   const [loading, setLoading] = useState(true);
 
+  // Real-time subscription to Firestore
   useEffect(() => {
     if (currentUser) {
-      const fetchData = async () => {
-        try {
-          const userItems = await getUserItems(currentUser.uid);
-          setItems(userItems);
-          const userSchedule = await getUserSchedule(currentUser.uid);
-          setSchedule(userSchedule);
-        } catch (error) {
-          console.error("Error fetching data:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchData();
+      const unsubscribe = subscribeToUserItems(currentUser.uid, (newItems) => {
+        setItems(newItems);
+        setLoading(false);
+      });
+
+      // Fetch schedule separately (can be made real-time later if needed)
+      getUserSchedule(currentUser.uid).then(setSchedule);
+
+      return () => unsubscribe();
     } else {
       setItems([]);
       setSchedule({});
@@ -45,28 +43,58 @@ export function ClosetProvider({ children }) {
 
   // Function to add a new item
   const addItem = async (item) => {
-    if (!currentUser) return;
+    if (!currentUser) throw new Error("User not authenticated");
+    
+    // Optimistic update
+    const tempId = Date.now().toString();
+    const tempItem = {
+      ...item,
+      id: tempId,
+      rating: 3,
+      wearCount: 0,
+      createdAt: new Date().toISOString(),
+      isOptimistic: true
+    };
+    
+    setItems((prevItems) => [tempItem, ...prevItems]);
+
     try {
-      const newItem = await addItemToDb(currentUser.uid, {
+      let imageUrl = item.imageUri;
+      
+      // Upload to storage
+      if (item.imageUri && item.imageUri.startsWith('data:')) {
+        imageUrl = await uploadImageToStorage(currentUser.uid, item.imageUri);
+      }
+
+      const newItemData = {
         ...item,
-        rating: 3, // Default rating
+        imageUri: imageUrl,
+        rating: 3,
         wearCount: 0,
         createdAt: new Date().toISOString()
-      });
-      setItems((prevItems) => [...prevItems, newItem]);
+      };
+
+      await addItemToDb(currentUser.uid, newItemData);
+      
+      // Remove temp item (real item comes via subscription)
+      setItems(prev => prev.filter(i => i.id !== tempId));
+      
     } catch (error) {
       console.error("Error adding item:", error);
+      setItems(prev => prev.filter(i => i.id !== tempId)); // Rollback
+      throw error;
     }
   };
 
   // Function to update an item
   const updateItem = async (id, updates) => {
     if (!currentUser) return;
+    // Optimistic update
+    setItems((prevItems) =>
+      prevItems.map((item) => (item.id === id ? { ...item, ...updates } : item))
+    );
     try {
       await updateItemInDb(currentUser.uid, id, updates);
-      setItems((prevItems) =>
-        prevItems.map((item) => (item.id === id ? { ...item, ...updates } : item))
-      );
     } catch (error) {
       console.error("Error updating item:", error);
     }
@@ -75,66 +103,36 @@ export function ClosetProvider({ children }) {
   // Function to delete an item
   const deleteItem = async (id) => {
     if (!currentUser) return;
+    // Optimistic update
+    setItems((prevItems) => prevItems.filter((item) => item.id !== id));
     try {
       await deleteItemFromDb(currentUser.uid, id);
-      setItems((prevItems) => prevItems.filter((item) => item.id !== id));
     } catch (error) {
       console.error("Error deleting item:", error);
     }
   };
 
-  // Function to add an outfit to the schedule
+  // Schedule functions
   const addToSchedule = async (date, outfitData) => {
     if (!currentUser) return;
+    setSchedule(prev => ({
+      ...prev,
+      [date]: { date, ...outfitData }
+    }));
     try {
       await saveScheduleToDb(currentUser.uid, date, outfitData);
-      setSchedule(prev => ({
-        ...prev,
-        [date]: outfitData
-      }));
     } catch (error) {
       console.error("Error saving schedule:", error);
     }
   };
 
-  // Function to mark an outfit as worn (triggers refresh cycle)
-  const markAsWorn = async (itemIds, date = new Date()) => {
-    if (!currentUser) return;
-    const wornDate = new Date(date).toISOString();
-    
-    // Update local state first for responsiveness
-    setItems(prevItems => 
-      prevItems.map(item => {
-        if (itemIds.includes(item.id)) {
-          return { 
-            ...item, 
-            lastWorn: wornDate,
-            wearCount: (item.wearCount || 0) + 1
-          };
-        }
-        return item;
-      })
-    );
-
-    // Update DB
-    for (const id of itemIds) {
-      const item = items.find(i => i.id === id);
-      if (item) {
-        await updateItemInDb(currentUser.uid, id, {
-          lastWorn: wornDate,
-          wearCount: (item.wearCount || 0) + 1
-        });
-      }
-    }
-  };
-
-  // Function to check availability based on refresh cycle
   const isItemAvailable = (item) => {
     if (!item.lastWorn) return true;
     const lastWornDate = new Date(item.lastWorn);
-    const availableDate = new Date(lastWornDate);
-    availableDate.setDate(lastWornDate.getDate() + (item.refreshCycle || 1)); // Default 1 day if missing
-    return new Date() >= availableDate;
+    const today = new Date();
+    const diffTime = Math.abs(today - lastWornDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    return diffDays > 7;
   };
 
   const value = {
@@ -145,8 +143,7 @@ export function ClosetProvider({ children }) {
     updateItem,
     deleteItem,
     addToSchedule,
-    markAsWorn,
-    isItemAvailable,
+    isItemAvailable
   };
 
   return (

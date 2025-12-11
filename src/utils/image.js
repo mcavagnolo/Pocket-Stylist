@@ -1,4 +1,4 @@
-export const resizeImage = (base64Str, maxWidth = 800, maxHeight = 800) => {
+export const resizeImage = (base64Str, maxWidth = 200, maxHeight = 200) => {
   return new Promise((resolve) => {
     let img = new Image();
     img.src = base64Str;
@@ -23,7 +23,7 @@ export const resizeImage = (base64Str, maxWidth = 800, maxHeight = 800) => {
       canvas.height = height;
       let ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/jpeg', 0.7));
+      resolve(canvas.toDataURL('image/jpeg', 0.4));
     };
   });
 };
