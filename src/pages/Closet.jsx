@@ -67,6 +67,7 @@ export default function Closet() {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [testStatus, setTestStatus] = useState("");
   const [testLogs, setTestLogs] = useState([]);
+  const APP_VERSION = "v1.2"; // Increment this to verify update
 
   const addLog = (msg) => setTestLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
 
@@ -77,8 +78,20 @@ export default function Closet() {
     setTestLogs([]);
     
     try {
-      addLog(`Online: ${navigator.onLine}`);
-      addLog("Test 1: Reading...");
+      addLog(`App Version: ${APP_VERSION}`);
+      addLog(`Online Status: ${navigator.onLine}`);
+      
+      // Test 0: General Internet Connectivity
+      addLog("Test 0: Pinging GitHub API...");
+      try {
+        const res = await fetch('https://api.github.com/zen');
+        addLog(`Ping success! Status: ${res.status}`);
+      } catch (netErr) {
+        addLog(`Ping FAILED: ${netErr.message}`);
+        addLog("WARNING: You might be offline or blocked.");
+      }
+
+      addLog("Test 1: Reading Firestore...");
       try {
         const items = await getUserItems(currentUser.uid);
         addLog(`Read success! Found ${items.length} items.`);
@@ -87,7 +100,7 @@ export default function Closet() {
         throw readErr; // Stop if read fails
       }
 
-      addLog("Test 2: Writing...");
+      addLog("Test 2: Writing Firestore...");
       await addItemToDb(currentUser.uid, {
         id: testId,
         type: "test_connection",
@@ -153,7 +166,10 @@ export default function Closet() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Virtual Closet</Text>
+        <View>
+          <Text style={styles.title}>Virtual Closet</Text>
+          <Text style={{fontSize: 10, color: '#999'}}>{APP_VERSION}</Text>
+        </View>
         <View style={{flexDirection: 'row', gap: 10}}>
           <TouchableOpacity style={[styles.addButton, {backgroundColor: '#666'}]} onPress={runConnectionTest}>
             <Text style={styles.addButtonText}>Test DB</Text>
