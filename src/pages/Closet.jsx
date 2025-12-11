@@ -65,22 +65,39 @@ export default function Closet() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [addModalVisible, setAddModalVisible] = useState(false);
+  const [testStatus, setTestStatus] = useState("");
+  const [testLogs, setTestLogs] = useState([]);
+
+  const addLog = (msg) => setTestLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
 
   const runConnectionTest = async () => {
     if (!currentUser) return alert("Not logged in");
     const testId = "test_" + Date.now();
+    setTestStatus("Running...");
+    setTestLogs([]);
+    
     try {
-      alert("Starting connection test...");
+      addLog("Starting connection test...");
+      addLog(`User ID: ${currentUser.uid}`);
+      
+      addLog("Attempting to write to Firestore...");
       await addItemToDb(currentUser.uid, {
         id: testId,
         type: "test_connection",
         createdAt: new Date().toISOString()
       });
-      alert("Connection Test PASSED! Database is writable.");
+      
+      addLog("Write successful!");
+      setTestStatus("PASSED");
+      
       // Cleanup
+      addLog("Cleaning up test item...");
       deleteItem(testId);
+      addLog("Cleanup done.");
     } catch (e) {
-      alert(`Connection Test FAILED: ${e.message}`);
+      console.error(e);
+      addLog(`ERROR: ${e.message}`);
+      setTestStatus("FAILED");
     }
   };
   const [detailModalVisible, setDetailModalVisible] = useState(false);
@@ -155,6 +172,15 @@ export default function Closet() {
           onChange={handleFileChange}
         />
       </View>
+
+      {testLogs.length > 0 && (
+        <View style={{padding: 10, backgroundColor: '#eee', marginBottom: 10, maxHeight: 150, overflow: 'scroll'}}>
+          <Text style={{fontWeight: 'bold', marginBottom: 5}}>Debug Logs ({testStatus}):</Text>
+          {testLogs.map((log, i) => (
+            <Text key={i} style={{fontSize: 12, fontFamily: 'monospace'}}>{log}</Text>
+          ))}
+        </View>
+      )}
       
       <FlatList
         data={items}
