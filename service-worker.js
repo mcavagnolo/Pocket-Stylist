@@ -1,5 +1,5 @@
-const CACHE_NAME = 'pocket-stylist-v1';
-const IMAGE_CACHE_NAME = 'pocket-stylist-images-v1';
+const CACHE_NAME = 'pocket-stylist-v2';
+const IMAGE_CACHE_NAME = 'pocket-stylist-images-v2';
 
 const ASSETS_TO_CACHE = [
   '/',
@@ -51,7 +51,8 @@ self.addEventListener('fetch', (event) => {
           // Otherwise fetch from network
           return fetch(event.request).then((networkResponse) => {
             // Cache the new response
-            if (networkResponse && networkResponse.status === 200) {
+            // We allow 'opaque' responses (status 0) for cross-origin images (Firebase Storage)
+            if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque')) {
               cache.put(event.request, networkResponse.clone());
             }
             return networkResponse;
