@@ -55,7 +55,7 @@ export const addItemToDb = async (userId, item) => {
     
     const setDocPromise = setDoc(newDocRef, item);
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Database write timed out after 15 seconds")), 15000)
+      setTimeout(() => reject(new Error("Database write timed out after 30 seconds")), 30000)
     );
     
     await Promise.race([setDocPromise, timeoutPromise]);

@@ -74,6 +74,7 @@ export function ClosetProvider({ children }) {
         createdAt: new Date().toISOString()
       };
 
+      console.log("Saving item to DB. Size approx:", JSON.stringify(newItemData).length, "bytes");
       await addItemToDb(currentUser.uid, newItemData);
       
       // Remove temp item (real item comes via subscription)
@@ -81,7 +82,7 @@ export function ClosetProvider({ children }) {
       
     } catch (error) {
       console.error("Error adding item:", error);
-      alert(`Failed to save item: ${error.message}`);
+      alert(`Failed to save item: ${error.message}. \nCheck console for details.`);
       setItems(prev => prev.filter(i => i.id !== tempId)); // Rollback
       throw error;
     }
