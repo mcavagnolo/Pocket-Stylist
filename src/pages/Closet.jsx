@@ -2,6 +2,8 @@ import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity, Modal, ScrollView, Platform } from 'react-native';
 import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
+import { addItemToDb } from '../services/db';
+import { useAuth } from '../context/AuthContext';
 
 const numColumns = 2;
 const screenWidth = Dimensions.get('window').width;
@@ -60,8 +62,27 @@ const ClosetItem = React.memo(({ item, onPress, isAvailable }) => (
 
 export default function Closet() {
   const { items, isItemAvailable, deleteItem, updateItem } = useCloset();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [addModalVisible, setAddModalVisible] = useState(false);
+
+  const runConnectionTest = async () => {
+    if (!currentUser) return alert("Not logged in");
+    const testId = "test_" + Date.now();
+    try {
+      alert("Starting connection test...");
+      await addItemToDb(currentUser.uid, {
+        id: testId,
+        type: "test_connection",
+        createdAt: new Date().toISOString()
+      });
+      alert("Connection Test PASSED! Database is writable.");
+      // Cleanup
+      deleteItem(testId);
+    } catch (e) {
+      alert(`Connection Test FAILED: ${e.message}`);
+    }
+  };
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   
@@ -109,9 +130,14 @@ export default function Closet() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Virtual Closet</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => setAddModalVisible(true)}>
-          <Text style={styles.addButtonText}>+ Add</Text>
-        </TouchableOpacity>
+        <View style={{flexDirection: 'row', gap: 10}}>
+          <TouchableOpacity style={[styles.addButton, {backgroundColor: '#666'}]} onPress={runConnectionTest}>
+            <Text style={styles.addButtonText}>Test DB</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.addButton} onPress={() => setAddModalVisible(true)}>
+            <Text style={styles.addButtonText}>+ Add</Text>
+          </TouchableOpacity>
+        </View>
         
         <input
           type="file"
