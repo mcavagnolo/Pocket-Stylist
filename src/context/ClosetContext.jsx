@@ -81,6 +81,7 @@ export function ClosetProvider({ children }) {
       
     } catch (error) {
       console.error("Error adding item:", error);
+      alert(`Failed to save item: ${error.message}`);
       setItems(prev => prev.filter(i => i.id !== tempId)); // Rollback
       throw error;
     }

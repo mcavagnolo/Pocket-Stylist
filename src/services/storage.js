@@ -13,11 +13,19 @@ export const uploadImageToStorage = async (userId, base64Image) => {
     const filename = `closet/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
     const storageRef = ref(storage, `users/${userId}/${filename}`);
 
-    console.log("Starting upload via uploadString...");
+    console.log("Starting upload...");
     
-    // Upload the Base64 string directly
-    // 'data_url' format handles the "data:image/jpeg;base64,..." prefix automatically
-    const snapshot = await uploadString(storageRef, base64Image, 'data_url');
+    // Convert data URL to Blob for better reliability
+    const response = await fetch(base64Image);
+    const blob = await response.blob();
+
+    // Upload with timeout
+    const uploadPromise = uploadBytes(storageRef, blob);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Upload timed out after 30 seconds")), 30000)
+    );
+
+    const snapshot = await Promise.race([uploadPromise, timeoutPromise]);
 
     console.log("Upload successful, getting URL...");
 

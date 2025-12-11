@@ -52,7 +52,14 @@ export const addItemToDb = async (userId, item) => {
     console.log('Generated ID:', newDocRef.id);
     
     console.log('Writing document to Firestore (setDoc)...');
-    await setDoc(newDocRef, item);
+    
+    const setDocPromise = setDoc(newDocRef, item);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Database write timed out after 15 seconds")), 15000)
+    );
+    
+    await Promise.race([setDocPromise, timeoutPromise]);
+    
     console.log('Document written successfully');
     
     return { ...item, id: newDocRef.id };
