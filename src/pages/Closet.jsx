@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity, Modal, ScrollView, Platform } from 'react-native';
 import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
-import { addItemToDb } from '../services/db';
+import { addItemToDb, getUserItems } from '../services/db';
 import { useAuth } from '../context/AuthContext';
 
 const numColumns = 2;
@@ -77,10 +77,17 @@ export default function Closet() {
     setTestLogs([]);
     
     try {
-      addLog("Starting connection test...");
-      addLog(`User ID: ${currentUser.uid}`);
-      
-      addLog("Attempting to write to Firestore...");
+      addLog(`Online: ${navigator.onLine}`);
+      addLog("Test 1: Reading...");
+      try {
+        const items = await getUserItems(currentUser.uid);
+        addLog(`Read success! Found ${items.length} items.`);
+      } catch (readErr) {
+        addLog(`Read FAILED: ${readErr.message}`);
+        throw readErr; // Stop if read fails
+      }
+
+      addLog("Test 2: Writing...");
       await addItemToDb(currentUser.uid, {
         id: testId,
         type: "test_connection",
@@ -91,9 +98,9 @@ export default function Closet() {
       setTestStatus("PASSED");
       
       // Cleanup
-      addLog("Cleaning up test item...");
+      addLog("Cleaning up...");
       deleteItem(testId);
-      addLog("Cleanup done.");
+      addLog("Done.");
     } catch (e) {
       console.error(e);
       addLog(`ERROR: ${e.message}`);
