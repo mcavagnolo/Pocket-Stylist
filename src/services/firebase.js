@@ -1,8 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { 
   initializeFirestore, 
-  persistentLocalCache, 
-  persistentMultipleTabManager 
+  memoryLocalCache
 } from 'firebase/firestore';
 import { 
   getAuth, 
@@ -34,14 +33,11 @@ export const auth = getAuth(app);
 export const storage = getStorage(app);
 
 // Initialize Firestore
-// We are temporarily disabling persistent cache to clear out any old bloated data
-// that might be slowing down the app load.
-// Re-enabling Force Long Polling to fix write timeouts on restrictive networks.
+// CRITICAL: Using memoryLocalCache to prevent "pending write" queue from blocking new writes.
+// This ensures we are not stuck trying to upload old broken data.
 export const db = initializeFirestore(app, {
+  localCache: memoryLocalCache(),
   experimentalForceLongPolling: true,
-  // localCache: persistentLocalCache({
-  //   tabManager: persistentMultipleTabManager()
-  // })
 });
 
 export const login = (email, password) => {
