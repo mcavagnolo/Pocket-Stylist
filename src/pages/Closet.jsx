@@ -69,9 +69,13 @@ export default function Closet() {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [testStatus, setTestStatus] = useState("");
   const [testLogs, setTestLogs] = useState([]);
-  const APP_VERSION = "v1.10 (Config Check)"; // Increment this to verify update
+  const APP_VERSION = "v1.11 (Log Fix)"; // Increment this to verify update
 
-  const addLog = (msg) => setTestLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
+  const addLog = (msg) => {
+    const logMsg = `${new Date().toLocaleTimeString()}: ${msg}`;
+    console.log(`[ConnectionTest] ${msg}`); // Ensure it goes to console
+    setTestLogs(prev => [...prev, logMsg]);
+  };
 
   const handleReset = async () => {
     if (confirm("This will clear the app's local cache to fix sync issues. It will NOT delete your account data. The app will reload. Continue?")) {
