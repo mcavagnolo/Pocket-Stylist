@@ -98,6 +98,14 @@ export const updateItemInDb = async (userId, itemId, updates) => {
   await updateDoc(itemRef, updates);
 };
 
+export const saveOutfitPreference = async (userId, outfitData) => {
+  const preferencesRef = collection(getDb(), 'users', userId, 'outfit_preferences');
+  await addDoc(preferencesRef, {
+    ...outfitData,
+    timestamp: new Date().toISOString()
+  });
+};
+
 export const deleteItemFromDb = async (userId, itemId) => {
   const itemRef = doc(getDb(), 'users', userId, 'closet', itemId);
   await deleteDoc(itemRef);

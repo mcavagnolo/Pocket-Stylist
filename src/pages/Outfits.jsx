@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Image, Modal } from 'react-native';
 import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
+import { useAuth } from '../context/AuthContext';
 import { generateOutfitSuggestions } from '../services/openai';
+import { saveOutfitPreference } from '../services/db';
 
 export default function Outfits() {
   const { items, isItemAvailable, addToSchedule } = useCloset();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [destination, setDestination] = useState('');
   const [temperature, setTemperature] = useState('');
@@ -15,6 +18,7 @@ export default function Outfits() {
   const [selectedOutfit, setSelectedOutfit] = useState(null);
   const [showDateModal, setShowDateModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [preferences, setPreferences] = useState({});
 
   const handleGenerate = async () => {
     if (!destination || !temperature || !style) {
@@ -23,6 +27,7 @@ export default function Outfits() {
     }
 
     setLoading(true);
+    setPreferences({}); // Reset preferences for new batch
     // Filter only available items
     const availableItems = items.filter(isItemAvailable);
     
@@ -38,6 +43,37 @@ export default function Outfits() {
       alert("Failed to generate suggestions. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePreference = async (outfit, index, type) => {
+    if (!currentUser) return;
+    
+    // Prevent multiple votes
+    if (preferences[index]) return;
+
+    // Gather tags
+    const outfitTags = new Set();
+    outfit.items.forEach(itemId => {
+      const item = items.find(i => i.id === itemId);
+      if (item && item.tags) {
+        item.tags.forEach(tag => outfitTags.add(tag));
+      }
+    });
+
+    const preferenceData = {
+      items: outfit.items,
+      tags: Array.from(outfitTags),
+      preference: type,
+      context: { destination, temperature, style }
+    };
+
+    try {
+      await saveOutfitPreference(currentUser.uid, preferenceData);
+      setPreferences(prev => ({ ...prev, [index]: type }));
+    } catch (error) {
+      console.error("Error saving preference:", error);
+      alert("Failed to save preference");
     }
   };
 
@@ -118,9 +154,29 @@ export default function Outfits() {
                   );
                 })}
               </ScrollView>
-              <TouchableOpacity style={styles.scheduleButton} onPress={() => handleSchedule(outfit)}>
-                <Text style={styles.scheduleButtonText}>Schedule This Outfit</Text>
-              </TouchableOpacity>
+              
+              <View style={styles.actionsRow}>
+                <View style={styles.voteButtons}>
+                  <TouchableOpacity 
+                    style={[styles.voteButton, preferences[index] === 'like' && styles.likedButton]} 
+                    onPress={() => handlePreference(outfit, index, 'like')}
+                    disabled={!!preferences[index]}
+                  >
+                    <Text style={styles.voteEmoji}>👍</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.voteButton, preferences[index] === 'dislike' && styles.dislikedButton]} 
+                    onPress={() => handlePreference(outfit, index, 'dislike')}
+                    disabled={!!preferences[index]}
+                  >
+                    <Text style={styles.voteEmoji}>👎</Text>
+                  </TouchableOpacity>
+                </View>
+                
+                <TouchableOpacity style={styles.scheduleButton} onPress={() => handleSchedule(outfit)}>
+                  <Text style={styles.scheduleButtonText}>Schedule</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           ))}
         </View>
@@ -237,9 +293,42 @@ const styles = StyleSheet.create({
     color: '#666',
     textTransform: 'capitalize',
   },
+  actionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  voteButtons: {
+    flexDirection: 'row',
+  },
+  voteButton: {
+    backgroundColor: '#f0f0f0',
+    padding: 10,
+    borderRadius: 20,
+    marginRight: 10,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  likedButton: {
+    backgroundColor: '#d4edda',
+    borderWidth: 1,
+    borderColor: '#28a745',
+  },
+  dislikedButton: {
+    backgroundColor: '#f8d7da',
+    borderWidth: 1,
+    borderColor: '#dc3545',
+  },
+  voteEmoji: {
+    fontSize: 18,
+  },
   scheduleButton: {
     backgroundColor: '#34C759',
-    padding: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 5,
     alignItems: 'center',
   },
