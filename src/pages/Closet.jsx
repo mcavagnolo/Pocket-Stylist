@@ -5,7 +5,7 @@ import { useCloset } from '../context/ClosetContext';
 import { addItemToDb, getUserItems } from '../services/db';
 import { useAuth } from '../context/AuthContext';
 import { enableNetwork } from 'firebase/firestore';
-import { db, clearCache } from '../services/firebase';
+import { getDb, clearCache, hardReconnect } from '../services/firebase';
 
 const numColumns = 2;
 const screenWidth = Dimensions.get('window').width;
@@ -69,7 +69,7 @@ export default function Closet() {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [testStatus, setTestStatus] = useState("");
   const [testLogs, setTestLogs] = useState([]);
-  const APP_VERSION = "v1.7 (Clean+LongPoll)"; // Increment this to verify update
+  const APP_VERSION = "v1.8 (Lazy Init)"; // Increment this to verify update
 
   const addLog = (msg) => setTestLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
 
@@ -89,9 +89,14 @@ export default function Closet() {
       addLog(`App Version: ${APP_VERSION}`);
       addLog(`Online Status: ${navigator.onLine}`);
       
+      // Hard Reconnect
+      addLog("Attempting Hard Reconnect...");
+      await hardReconnect();
+      addLog("Re-initialized.");
+
       // Force Network
       addLog("Forcing Firestore Network Connection...");
-      await enableNetwork(db);
+      await enableNetwork(getDb());
       addLog("Network Enabled.");
 
       // Test 0: General Internet Connectivity

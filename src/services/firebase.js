@@ -35,22 +35,51 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 
-// Initialize Firestore
-// Reverting to persistent cache as requested, with a mechanism to clear it.
-// ENABLE LONG POLLING: Now that cache is clean, this will bypass network blocks.
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  }),
-  experimentalForceLongPolling: true,
+let dbInstance = null;
+
+export const getDb = () => {
+  if (!dbInstance) {
+    console.log("Initializing Firestore (Lazy)...");
+    dbInstance = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      }),
+      experimentalForceLongPolling: true,
+    });
+  }
+  return dbInstance;
+};
+
+// Deprecated: For backward compatibility, but we should move away from this.
+// We'll make it a getter that calls getDb() to avoid breaking imports immediately if we miss one,
+// but ideally we replace all usages.
+export const db = new Proxy({}, {
+  get: function(target, prop) {
+    return getDb()[prop];
+  }
 });
+
+export const hardReconnect = async () => {
+  console.log("Hard Reconnect: Terminating existing instance...");
+  if (dbInstance) {
+    try {
+      await terminate(dbInstance);
+    } catch (e) {
+      console.warn("Termination warning:", e);
+    }
+    dbInstance = null;
+  }
+  console.log("Hard Reconnect: Re-initializing...");
+  return getDb();
+};
 
 export const clearCache = async () => {
   try {
     console.log('Terminating Firestore...');
-    await terminate(db);
+    const d = getDb();
+    await terminate(d);
     console.log('Clearing persistence...');
-    await clearIndexedDbPersistence(db);
+    await clearIndexedDbPersistence(d);
     console.log('Persistence cleared. Reloading...');
     window.location.reload();
   } catch (error) {
