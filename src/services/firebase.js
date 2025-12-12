@@ -3,7 +3,6 @@ import {
   initializeFirestore, 
   persistentLocalCache,
   persistentMultipleTabManager,
-  memoryLocalCache,
   terminate,
   clearIndexedDbPersistence
 } from 'firebase/firestore';
@@ -27,18 +26,6 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-console.log("Firebase Config Loaded:", {
-  projectId: firebaseConfig.projectId,
-  authDomain: firebaseConfig.authDomain,
-  apiKeyPresent: !!firebaseConfig.apiKey,
-  storageBucket: firebaseConfig.storageBucket
-});
-
-// Debug config presence
-if (!firebaseConfig.storageBucket) {
-  console.error("CRITICAL: VITE_FIREBASE_STORAGE_BUCKET is missing from environment variables!");
-}
-
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
@@ -47,11 +34,10 @@ let dbInstance = null;
 
 export const getDb = () => {
   if (!dbInstance) {
-    console.log("Initializing Firestore (Lazy + Memory Cache)...");
-    // SWITCHING TO MEMORY CACHE & AUTO-NETWORK
-    // This rules out IndexedDB corruption and Long Polling issues.
     dbInstance = initializeFirestore(app, {
-      localCache: memoryLocalCache(),
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      }),
     });
   }
   return dbInstance;
@@ -66,34 +52,17 @@ export const db = new Proxy({}, {
   }
 });
 
-export const hardReconnect = async () => {
-  console.log("Hard Reconnect: Terminating existing instance...");
-  if (dbInstance) {
-    try {
-      await terminate(dbInstance);
-    } catch (e) {
-      console.warn("Termination warning:", e);
-    }
-    dbInstance = null;
-  }
-  console.log("Hard Reconnect: Re-initializing...");
-  return getDb();
-};
-
 export const clearCache = async () => {
   try {
-    console.log('Terminating Firestore...');
     const d = getDb();
     await terminate(d);
-    console.log('Clearing persistence (if any)...');
-    try {
-      await clearIndexedDbPersistence(d);
-    } catch (e) {
-      console.log("Persistence clear skipped:", e.message);
-    }
-    console.log('Reloading...');
+    await clearIndexedDbPersistence(d);
     window.location.reload();
   } catch (error) {
+    console.error('Error clearing cache:', error);
+    window.location.reload();
+  }
+};
     console.error('Failed to clear cache:', error);
     // Fallback: Try to nuke IndexedDB directly
     try {

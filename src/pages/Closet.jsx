@@ -67,82 +67,6 @@ export default function Closet() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [addModalVisible, setAddModalVisible] = useState(false);
-  const [testStatus, setTestStatus] = useState("");
-  const [testLogs, setTestLogs] = useState([]);
-  const APP_VERSION = "v1.11 (Log Fix)"; // Increment this to verify update
-
-  const addLog = (msg) => {
-    const logMsg = `${new Date().toLocaleTimeString()}: ${msg}`;
-    console.log(`[ConnectionTest] ${msg}`); // Ensure it goes to console
-    setTestLogs(prev => [...prev, logMsg]);
-  };
-
-  const handleReset = async () => {
-    if (confirm("This will clear the app's local cache to fix sync issues. It will NOT delete your account data. The app will reload. Continue?")) {
-      await clearCache();
-    }
-  };
-
-  const runConnectionTest = async () => {
-    if (!currentUser) return alert("Not logged in");
-    const testId = "test_" + Date.now();
-    setTestStatus("Running...");
-    setTestLogs([]);
-    
-    try {
-      addLog(`App Version: ${APP_VERSION}`);
-      addLog(`Online Status: ${navigator.onLine}`);
-      
-      // Hard Reconnect
-      addLog("Attempting Hard Reconnect...");
-      await hardReconnect();
-      addLog("Re-initialized.");
-
-      // Force Network
-      addLog("Forcing Firestore Network Connection...");
-      await enableNetwork(getDb());
-      addLog("Network Enabled.");
-
-      // Test 0: General Internet Connectivity
-      addLog("Test 0: Pinging GitHub API...");
-      try {
-        const res = await fetch('https://api.github.com/zen');
-        addLog(`Ping success! Status: ${res.status}`);
-      } catch (netErr) {
-        addLog(`Ping FAILED: ${netErr.message}`);
-        addLog("WARNING: You might be offline or blocked.");
-      }
-
-      addLog(`Test 1: Reading Firestore for user ${currentUser.uid}...`);
-      try {
-        const items = await getUserItems(currentUser.uid);
-        addLog(`Read success! Found ${items.length} items.`);
-      } catch (readErr) {
-        addLog(`Read FAILED: ${readErr.message}`);
-        console.error("Read Error:", readErr);
-        throw readErr; // Stop if read fails
-      }
-
-      addLog("Test 2: Writing Firestore...");
-      await addItemToDb(currentUser.uid, {
-        id: testId,
-        type: "test_connection",
-        createdAt: new Date().toISOString()
-      });
-      
-      addLog("Write successful!");
-      setTestStatus("PASSED");
-      
-      // Cleanup
-      addLog("Cleaning up...");
-      deleteItem(testId);
-      addLog("Done.");
-    } catch (e) {
-      console.error(e);
-      addLog(`ERROR: ${e.message}`);
-      setTestStatus("FAILED");
-    }
-  };
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   
@@ -189,21 +113,10 @@ export default function Closet() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Virtual Closet</Text>
-          <Text style={{fontSize: 10, color: '#999'}}>{APP_VERSION}</Text>
-        </View>
-        <View style={{flexDirection: 'row', gap: 10}}>
-          <TouchableOpacity style={[styles.addButton, {backgroundColor: '#d9534f'}]} onPress={handleReset}>
-            <Text style={styles.addButtonText}>Reset</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.addButton, {backgroundColor: '#666'}]} onPress={runConnectionTest}>
-            <Text style={styles.addButtonText}>Test DB</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.addButton} onPress={() => setAddModalVisible(true)}>
-            <Text style={styles.addButtonText}>+ Add</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.title}>Virtual Closet</Text>
+        <TouchableOpacity style={styles.addButton} onPress={() => setAddModalVisible(true)}>
+          <Text style={styles.addButtonText}>+ Add</Text>
+        </TouchableOpacity>
         
         <input
           type="file"
@@ -221,15 +134,6 @@ export default function Closet() {
           onChange={handleFileChange}
         />
       </View>
-
-      {testLogs.length > 0 && (
-        <View style={{padding: 10, backgroundColor: '#eee', marginBottom: 10, maxHeight: 150, overflow: 'scroll'}}>
-          <Text style={{fontWeight: 'bold', marginBottom: 5}}>Debug Logs ({testStatus}):</Text>
-          {testLogs.map((log, i) => (
-            <Text key={i} style={{fontSize: 12, fontFamily: 'monospace'}}>{log}</Text>
-          ))}
-        </View>
-      )}
       
       <FlatList
         data={items}
