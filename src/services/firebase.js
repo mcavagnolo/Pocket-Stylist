@@ -1,7 +1,10 @@
 import { initializeApp } from 'firebase/app';
 import { 
   initializeFirestore, 
-  memoryLocalCache
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  terminate,
+  clearIndexedDbPersistence
 } from 'firebase/firestore';
 import { 
   getAuth, 
@@ -33,11 +36,33 @@ export const auth = getAuth(app);
 export const storage = getStorage(app);
 
 // Initialize Firestore
-// CRITICAL: Using memoryLocalCache to prevent "pending write" queue from blocking new writes.
-// Reverting to WebSockets (default) as LongPolling might be unstable on this network.
+// Reverting to persistent cache as requested, with a mechanism to clear it.
 export const db = initializeFirestore(app, {
-  localCache: memoryLocalCache(),
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
 });
+
+export const clearCache = async () => {
+  try {
+    console.log('Terminating Firestore...');
+    await terminate(db);
+    console.log('Clearing persistence...');
+    await clearIndexedDbPersistence(db);
+    console.log('Persistence cleared. Reloading...');
+    window.location.reload();
+  } catch (error) {
+    console.error('Failed to clear cache:', error);
+    // Fallback: Try to nuke IndexedDB directly
+    try {
+      const dbs = await window.indexedDB.databases();
+      dbs.forEach(db => window.indexedDB.deleteDatabase(db.name));
+      window.location.reload();
+    } catch (e) {
+      alert('Manual Reset Required: Please clear your browser site data.');
+    }
+  }
+};
 
 export const login = (email, password) => {
   return signInWithEmailAndPassword(auth, email, password);
