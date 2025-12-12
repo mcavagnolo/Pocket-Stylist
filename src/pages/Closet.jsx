@@ -102,6 +102,19 @@ export default function Closet() {
     updateItem(selectedItem.id, { rating });
   };
 
+  // Temporary cleanup function
+  const cleanupTestItems = async () => {
+    const testItems = items.filter(i => i.type === 'test_connection');
+    if (testItems.length === 0) return alert("No test items found.");
+    
+    if (confirm(`Found ${testItems.length} test items. Delete them all?`)) {
+      for (const item of testItems) {
+        await deleteItem(item.id);
+      }
+      alert("Cleanup complete.");
+    }
+  };
+
   const renderItem = ({ item }) => (
     <ClosetItem 
       item={item} 
@@ -114,6 +127,9 @@ export default function Closet() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Virtual Closet</Text>
+        <TouchableOpacity onPress={cleanupTestItems} style={{ marginRight: 10 }}>
+          <Text style={{ color: 'red', fontSize: 12 }}>Cleanup</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.addButton} onPress={() => setAddModalVisible(true)}>
           <Text style={styles.addButtonText}>+ Add</Text>
         </TouchableOpacity>
