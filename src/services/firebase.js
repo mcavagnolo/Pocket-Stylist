@@ -36,7 +36,9 @@ export const storage = getStorage(app);
 // Initialize Firestore
 // We are temporarily disabling persistent cache to clear out any old bloated data
 // that might be slowing down the app load.
+// Re-enabling Force Long Polling to fix write timeouts on restrictive networks.
 export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
   // localCache: persistentLocalCache({
   //   tabManager: persistentMultipleTabManager()
   // })
