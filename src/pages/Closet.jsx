@@ -69,7 +69,7 @@ export default function Closet() {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [testStatus, setTestStatus] = useState("");
   const [testLogs, setTestLogs] = useState([]);
-  const APP_VERSION = "v1.6 (ResetTool)"; // Increment this to verify update
+  const APP_VERSION = "v1.7 (Clean+LongPoll)"; // Increment this to verify update
 
   const addLog = (msg) => setTestLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
 

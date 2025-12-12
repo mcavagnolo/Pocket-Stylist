@@ -37,10 +37,12 @@ export const storage = getStorage(app);
 
 // Initialize Firestore
 // Reverting to persistent cache as requested, with a mechanism to clear it.
+// ENABLE LONG POLLING: Now that cache is clean, this will bypass network blocks.
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
-  })
+  }),
+  experimentalForceLongPolling: true,
 });
 
 export const clearCache = async () => {
