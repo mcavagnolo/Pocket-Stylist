@@ -63,17 +63,6 @@ export const clearCache = async () => {
     window.location.reload();
   }
 };
-    console.error('Failed to clear cache:', error);
-    // Fallback: Try to nuke IndexedDB directly
-    try {
-      const dbs = await window.indexedDB.databases();
-      dbs.forEach(db => window.indexedDB.deleteDatabase(db.name));
-      window.location.reload();
-    } catch (e) {
-      alert('Manual Reset Required: Please clear your browser site data.');
-    }
-  }
-};
 
 export const login = (email, password) => {
   return signInWithEmailAndPassword(auth, email, password);
