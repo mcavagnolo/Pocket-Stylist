@@ -26,7 +26,9 @@ export function ClosetProvider({ children }) {
   useEffect(() => {
     if (currentUser) {
       const unsubscribe = subscribeToUserItems(currentUser.uid, (newItems) => {
-        setItems(newItems);
+        // Filter out test items that might be stuck in cache or server
+        const cleanItems = newItems.filter(item => item.type !== 'test_connection');
+        setItems(cleanItems);
         setLoading(false);
       });
 

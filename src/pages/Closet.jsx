@@ -2,10 +2,7 @@ import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity, Modal, ScrollView, Platform } from 'react-native';
 import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
-import { addItemToDb, getUserItems } from '../services/db';
 import { useAuth } from '../context/AuthContext';
-import { enableNetwork } from 'firebase/firestore';
-import { getDb, clearCache, hardReconnect } from '../services/firebase';
 
 const numColumns = 2;
 const screenWidth = Dimensions.get('window').width;
@@ -102,21 +99,6 @@ export default function Closet() {
     updateItem(selectedItem.id, { rating });
   };
 
-  // Cleanup function to delete items from Server
-  const cleanupTestItems = async () => {
-    const testItems = items.filter(i => i.type === 'test_connection');
-    if (testItems.length === 0) return alert("No test items found.");
-    
-    if (confirm(`Found ${testItems.length} test items on the server. Delete them permanently?`)) {
-      let count = 0;
-      for (const item of testItems) {
-        await deleteItem(item.id);
-        count++;
-      }
-      alert(`Deleted ${count} items.`);
-    }
-  };
-
   const renderItem = ({ item }) => (
     <ClosetItem 
       item={item} 
@@ -129,16 +111,6 @@ export default function Closet() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Virtual Closet</Text>
-        <TouchableOpacity onPress={cleanupTestItems} style={{ marginRight: 10 }}>
-          <Text style={{ color: 'red', fontSize: 12 }}>Delete Test Items</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={async () => {
-          if (confirm("Clear local cache to stop old test items from syncing? App will reload.")) {
-            await clearCache();
-          }
-        }} style={{ marginRight: 10 }}>
-          <Text style={{ color: 'orange', fontSize: 12 }}>Reset Cache</Text>
-        </TouchableOpacity>
         <TouchableOpacity style={styles.addButton} onPress={() => setAddModalVisible(true)}>
           <Text style={styles.addButtonText}>+ Add</Text>
         </TouchableOpacity>
