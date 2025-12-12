@@ -102,6 +102,21 @@ export default function Closet() {
     updateItem(selectedItem.id, { rating });
   };
 
+  // Cleanup function to delete items from Server
+  const cleanupTestItems = async () => {
+    const testItems = items.filter(i => i.type === 'test_connection');
+    if (testItems.length === 0) return alert("No test items found.");
+    
+    if (confirm(`Found ${testItems.length} test items on the server. Delete them permanently?`)) {
+      let count = 0;
+      for (const item of testItems) {
+        await deleteItem(item.id);
+        count++;
+      }
+      alert(`Deleted ${count} items.`);
+    }
+  };
+
   const renderItem = ({ item }) => (
     <ClosetItem 
       item={item} 
@@ -114,6 +129,9 @@ export default function Closet() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Virtual Closet</Text>
+        <TouchableOpacity onPress={cleanupTestItems} style={{ marginRight: 10 }}>
+          <Text style={{ color: 'red', fontSize: 12 }}>Delete Test Items</Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={async () => {
           if (confirm("Clear local cache to stop old test items from syncing? App will reload.")) {
             await clearCache();
