@@ -5,7 +5,7 @@ import { useCloset } from '../context/ClosetContext';
 import { addItemToDb, getUserItems } from '../services/db';
 import { useAuth } from '../context/AuthContext';
 import { enableNetwork } from 'firebase/firestore';
-import { getDb, clearCache, hardReconnect } from '../services/firebase';
+import { getDb, clearCache } from '../services/firebase';
 
 const numColumns = 2;
 const screenWidth = Dimensions.get('window').width;
