@@ -227,6 +227,22 @@ export default function Closet() {
                 <Text style={styles.detailText}>Color: {selectedItem.color}</Text>
                 <Text style={styles.detailText}>Style: {selectedItem.style}</Text>
                 <Text style={styles.detailText}>Worn: {selectedItem.wearCount || 0} times</Text>
+                {selectedItem.refreshCycle && (
+                  <Text style={styles.detailText}>Refresh Cycle: {selectedItem.refreshCycle} days</Text>
+                )}
+
+                {selectedItem.tags && selectedItem.tags.length > 0 && (
+                  <View style={styles.tagsContainer}>
+                    <Text style={styles.sectionTitle}>Tags</Text>
+                    <View style={styles.tagsList}>
+                      {selectedItem.tags.map((tag, index) => (
+                        <View key={index} style={styles.tagChip}>
+                          <Text style={styles.tagText}>{tag}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
                 
                 <Text style={styles.sectionTitle}>Rating</Text>
                 <View style={styles.ratingContainer}>
@@ -382,6 +398,25 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 16,
     marginBottom: 5,
+    color: '#333',
+  },
+  tagsContainer: {
+    marginTop: 10,
+  },
+  tagsList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  tagChip: {
+    backgroundColor: '#e0e0e0',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 15,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  tagText: {
+    fontSize: 14,
     color: '#333',
   },
   sectionTitle: {
