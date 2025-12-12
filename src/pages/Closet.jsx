@@ -114,6 +114,13 @@ export default function Closet() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Virtual Closet</Text>
+        <TouchableOpacity onPress={async () => {
+          if (confirm("Clear local cache to stop old test items from syncing? App will reload.")) {
+            await clearCache();
+          }
+        }} style={{ marginRight: 10 }}>
+          <Text style={{ color: 'orange', fontSize: 12 }}>Reset Cache</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.addButton} onPress={() => setAddModalVisible(true)}>
           <Text style={styles.addButtonText}>+ Add</Text>
         </TouchableOpacity>
