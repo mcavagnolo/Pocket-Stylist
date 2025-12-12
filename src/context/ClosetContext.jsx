@@ -108,9 +108,12 @@ export function ClosetProvider({ children }) {
     // Optimistic update
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
     try {
+      console.log("Deleting item from DB:", id);
       await deleteItemFromDb(currentUser.uid, id);
+      console.log("Item deleted successfully:", id);
     } catch (error) {
       console.error("Error deleting item:", error);
+      // Rollback if needed, but for deletion we usually just let it fail silently or show error
     }
   };
 
