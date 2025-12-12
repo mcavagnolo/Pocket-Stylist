@@ -69,7 +69,7 @@ export default function Closet() {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [testStatus, setTestStatus] = useState("");
   const [testLogs, setTestLogs] = useState([]);
-  const APP_VERSION = "v1.9 (Memory Cache)"; // Increment this to verify update
+  const APP_VERSION = "v1.10 (Config Check)"; // Increment this to verify update
 
   const addLog = (msg) => setTestLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
 
@@ -109,12 +109,13 @@ export default function Closet() {
         addLog("WARNING: You might be offline or blocked.");
       }
 
-      addLog("Test 1: Reading Firestore...");
+      addLog(`Test 1: Reading Firestore for user ${currentUser.uid}...`);
       try {
         const items = await getUserItems(currentUser.uid);
         addLog(`Read success! Found ${items.length} items.`);
       } catch (readErr) {
         addLog(`Read FAILED: ${readErr.message}`);
+        console.error("Read Error:", readErr);
         throw readErr; // Stop if read fails
       }
 

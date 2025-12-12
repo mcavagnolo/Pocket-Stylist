@@ -27,6 +27,13 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+console.log("Firebase Config Loaded:", {
+  projectId: firebaseConfig.projectId,
+  authDomain: firebaseConfig.authDomain,
+  apiKeyPresent: !!firebaseConfig.apiKey,
+  storageBucket: firebaseConfig.storageBucket
+});
+
 // Debug config presence
 if (!firebaseConfig.storageBucket) {
   console.error("CRITICAL: VITE_FIREBASE_STORAGE_BUCKET is missing from environment variables!");
