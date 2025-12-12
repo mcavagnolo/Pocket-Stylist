@@ -34,10 +34,9 @@ export const storage = getStorage(app);
 
 // Initialize Firestore
 // CRITICAL: Using memoryLocalCache to prevent "pending write" queue from blocking new writes.
-// This ensures we are not stuck trying to upload old broken data.
+// Reverting to WebSockets (default) as LongPolling might be unstable on this network.
 export const db = initializeFirestore(app, {
   localCache: memoryLocalCache(),
-  experimentalForceLongPolling: true,
 });
 
 export const login = (email, password) => {

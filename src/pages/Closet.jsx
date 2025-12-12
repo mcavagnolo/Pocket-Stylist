@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
 import { addItemToDb, getUserItems } from '../services/db';
 import { useAuth } from '../context/AuthContext';
+import { enableNetwork } from 'firebase/firestore';
+import { db } from '../services/firebase';
 
 const numColumns = 2;
 const screenWidth = Dimensions.get('window').width;
@@ -67,7 +69,7 @@ export default function Closet() {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [testStatus, setTestStatus] = useState("");
   const [testLogs, setTestLogs] = useState([]);
-  const APP_VERSION = "v1.4 (MemoryCache)"; // Increment this to verify update
+  const APP_VERSION = "v1.5 (ForceNetwork)"; // Increment this to verify update
 
   const addLog = (msg) => setTestLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
 
@@ -81,6 +83,11 @@ export default function Closet() {
       addLog(`App Version: ${APP_VERSION}`);
       addLog(`Online Status: ${navigator.onLine}`);
       
+      // Force Network
+      addLog("Forcing Firestore Network Connection...");
+      await enableNetwork(db);
+      addLog("Network Enabled.");
+
       // Test 0: General Internet Connectivity
       addLog("Test 0: Pinging GitHub API...");
       try {
