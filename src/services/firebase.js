@@ -3,6 +3,7 @@ import {
   initializeFirestore, 
   persistentLocalCache,
   persistentMultipleTabManager,
+  memoryLocalCache,
   terminate,
   clearIndexedDbPersistence
 } from 'firebase/firestore';
@@ -39,12 +40,11 @@ let dbInstance = null;
 
 export const getDb = () => {
   if (!dbInstance) {
-    console.log("Initializing Firestore (Lazy)...");
+    console.log("Initializing Firestore (Lazy + Memory Cache)...");
+    // SWITCHING TO MEMORY CACHE & AUTO-NETWORK
+    // This rules out IndexedDB corruption and Long Polling issues.
     dbInstance = initializeFirestore(app, {
-      localCache: persistentLocalCache({
-        tabManager: persistentMultipleTabManager()
-      }),
-      experimentalForceLongPolling: true,
+      localCache: memoryLocalCache(),
     });
   }
   return dbInstance;
@@ -78,9 +78,13 @@ export const clearCache = async () => {
     console.log('Terminating Firestore...');
     const d = getDb();
     await terminate(d);
-    console.log('Clearing persistence...');
-    await clearIndexedDbPersistence(d);
-    console.log('Persistence cleared. Reloading...');
+    console.log('Clearing persistence (if any)...');
+    try {
+      await clearIndexedDbPersistence(d);
+    } catch (e) {
+      console.log("Persistence clear skipped:", e.message);
+    }
+    console.log('Reloading...');
     window.location.reload();
   } catch (error) {
     console.error('Failed to clear cache:', error);
