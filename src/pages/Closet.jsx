@@ -4,8 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
 import { addItemToDb, getUserItems } from '../services/db';
 import { useAuth } from '../context/AuthContext';
-import { enableNetwork, collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { getDb, clearCache } from '../services/firebase';
 
 const numColumns = 2;
 const screenWidth = Dimensions.get('window').width;
@@ -102,39 +100,6 @@ export default function Closet() {
     updateItem(selectedItem.id, { rating });
   };
 
-  // Cleanup function to delete items from Server
-  const cleanupTestItems = async () => {
-    if (!currentUser) return;
-    
-    try {
-      const db = getDb();
-      const closetRef = collection(db, 'users', currentUser.uid, 'closet');
-      // Query specifically for test items
-      const q = query(closetRef, where('type', '==', 'test_connection'));
-      
-      const snapshot = await getDocs(q);
-      
-      if (snapshot.empty) {
-        alert("No 'test_connection' items found on the server. Clearing local cache to remove any ghosts...");
-        await clearCache();
-        return;
-      }
-
-      if (confirm(`Found ${snapshot.size} test items on the SERVER. Delete them permanently?`)) {
-        const deletePromises = snapshot.docs.map(docSnap => 
-          deleteDoc(doc(db, 'users', currentUser.uid, 'closet', docSnap.id))
-        );
-        
-        await Promise.all(deletePromises);
-        alert("Server delete complete. App will reload to clear cache.");
-        await clearCache();
-      }
-    } catch (error) {
-      console.error("Cleanup failed:", error);
-      alert(`Cleanup failed: ${error.message}`);
-    }
-  };
-
   const renderItem = ({ item }) => (
     <ClosetItem 
       item={item} 
@@ -147,16 +112,6 @@ export default function Closet() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Virtual Closet</Text>
-        <TouchableOpacity onPress={cleanupTestItems} style={{ marginRight: 10 }}>
-          <Text style={{ color: 'red', fontSize: 12 }}>Delete Test Items</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={async () => {
-          if (confirm("Clear local cache to stop old test items from syncing? App will reload.")) {
-            await clearCache();
-          }
-        }} style={{ marginRight: 10 }}>
-          <Text style={{ color: 'orange', fontSize: 12 }}>Reset Cache</Text>
-        </TouchableOpacity>
         <TouchableOpacity style={styles.addButton} onPress={() => setAddModalVisible(true)}>
           <Text style={styles.addButtonText}>+ Add</Text>
         </TouchableOpacity>
