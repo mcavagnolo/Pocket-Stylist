@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
 import { addItemToDb, getUserItems } from '../services/db';
 import { useAuth } from '../context/AuthContext';
-import { enableNetwork } from 'firebase/firestore';
+import { enableNetwork, collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { getDb, clearCache } from '../services/firebase';
 
 const numColumns = 2;
@@ -104,16 +104,34 @@ export default function Closet() {
 
   // Cleanup function to delete items from Server
   const cleanupTestItems = async () => {
-    const testItems = items.filter(i => i.type === 'test_connection');
-    if (testItems.length === 0) return alert("No test items found.");
+    if (!currentUser) return;
     
-    if (confirm(`Found ${testItems.length} test items on the server. Delete them permanently?`)) {
-      let count = 0;
-      for (const item of testItems) {
-        await deleteItem(item.id);
-        count++;
+    try {
+      const db = getDb();
+      const closetRef = collection(db, 'users', currentUser.uid, 'closet');
+      // Query specifically for test items
+      const q = query(closetRef, where('type', '==', 'test_connection'));
+      
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        alert("No 'test_connection' items found on the server. Clearing local cache to remove any ghosts...");
+        await clearCache();
+        return;
       }
-      alert(`Deleted ${count} items.`);
+
+      if (confirm(`Found ${snapshot.size} test items on the SERVER. Delete them permanently?`)) {
+        const deletePromises = snapshot.docs.map(docSnap => 
+          deleteDoc(doc(db, 'users', currentUser.uid, 'closet', docSnap.id))
+        );
+        
+        await Promise.all(deletePromises);
+        alert("Server delete complete. App will reload to clear cache.");
+        await clearCache();
+      }
+    } catch (error) {
+      console.error("Cleanup failed:", error);
+      alert(`Cleanup failed: ${error.message}`);
     }
   };
 
