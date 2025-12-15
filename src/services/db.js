@@ -44,14 +44,10 @@ export const subscribeToUserItems = (userId, callback) => {
 
 // Closet Items
 export const addItemToDb = async (userId, item) => {
-  console.log('addItemToDb called for user:', userId);
   try {
     // Use setDoc with a generated ID instead of addDoc for better reliability
     const itemsRef = collection(getDb(), 'users', userId, 'closet');
     const newDocRef = doc(itemsRef); // Generate ID client-side
-    console.log('Generated ID:', newDocRef.id);
-    
-    console.log('Writing document to Firestore (setDoc)...');
     
     const setDocPromise = setDoc(newDocRef, item);
     const timeoutPromise = new Promise((_, reject) => 
@@ -59,8 +55,6 @@ export const addItemToDb = async (userId, item) => {
     );
     
     await Promise.race([setDocPromise, timeoutPromise]);
-    
-    console.log('Document written successfully');
     
     return { ...item, id: newDocRef.id };
   } catch (error) {
