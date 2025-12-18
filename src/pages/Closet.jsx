@@ -1,9 +1,11 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity, Modal, ScrollView, Platform } from 'react-native';
 import { useNavigate } from 'react-router-dom';
+import { FaFilter, FaTimes } from 'react-icons/fa';
 import { useCloset } from '../context/ClosetContext';
 import { addItemToDb, getUserItems } from '../services/db';
 import { useAuth } from '../context/AuthContext';
+import { resizeImage } from '../utils/image';
 
 const numColumns = 2;
 const screenWidth = Dimensions.get('window').width;
@@ -66,18 +68,61 @@ export default function Closet() {
   const navigate = useNavigate();
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [activeFilters, setActiveFilters] = useState({
+    type: [],
+    tags: []
+  });
   
   const cameraInputRef = useRef(null);
   const libraryInputRef = useRef(null);
+
+  const uniqueTypes = useMemo(() => {
+    const types = new Set(items.map(item => item.type).filter(Boolean));
+    return Array.from(types).sort();
+  }, [items]);
+
+  const uniqueTags = useMemo(() => {
+    const tags = new Set(items.flatMap(item => item.tags || []));
+    return Array.from(tags).sort();
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    return items.filter(item => {
+      const typeMatch = activeFilters.type.length === 0 || activeFilters.type.includes(item.type);
+      const tagMatch = activeFilters.tags.length === 0 || (item.tags && item.tags.some(tag => activeFilters.tags.includes(tag)));
+      return typeMatch && tagMatch;
+    });
+  }, [items, activeFilters]);
+
+  const toggleFilter = (category, value) => {
+    setActiveFilters(prev => {
+      const current = prev[category];
+      const updated = current.includes(value)
+        ? current.filter(item => item !== value)
+        : [...current, value];
+      return { ...prev, [category]: updated };
+    });
+  };
+
+  const clearFilters = () => {
+    setActiveFilters({ type: [], tags: [] });
+  };
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
       setAddModalVisible(false);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        navigate('/camera', { state: { image: reader.result } });
+      reader.onloadend = async () => {
+        try {
+          const resizedImage = await resizeImage(reader.result);
+          navigate('/camera', { state: { image: resizedImage } });
+        } catch (error) {
+          console.error("Error resizing image:", error);
+          alert("Failed to process image. Please try again.");
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -112,9 +157,20 @@ export default function Closet() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Virtual Closet</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => setAddModalVisible(true)}>
-          <Text style={styles.addButtonText}>+ Add</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <TouchableOpacity 
+            style={styles.filterButton} 
+            onPress={() => setFilterModalVisible(true)}
+          >
+            <FaFilter size={18} color="#333" />
+            {(activeFilters.type.length > 0 || activeFilters.tags.length > 0) && (
+              <View style={styles.filterBadge} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.addButton} onPress={() => setAddModalVisible(true)}>
+            <Text style={styles.addButtonText}>+ Add</Text>
+          </TouchableOpacity>
+        </View>
         
         <input
           type="file"
@@ -134,13 +190,89 @@ export default function Closet() {
       </View>
       
       <FlatList
-        data={items}
+        data={filteredItems}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         numColumns={numColumns}
         contentContainerStyle={styles.listContent}
-        ListEmptyComponent={<Text style={styles.emptyText}>No items in closet. Add some!</Text>}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>
+            {items.length === 0 ? "No items in closet. Add some!" : "No items match your filters."}
+          </Text>
+        }
       />
+
+      {/* Filter Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={filterModalVisible}
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalBackdrop} onPress={() => setFilterModalVisible(false)} />
+          <View style={[styles.modalContent, { maxHeight: '80%' }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filter Closet</Text>
+              <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+                <FaTimes size={20} color="#333" />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={{ width: '100%' }}>
+              <Text style={styles.filterSectionTitle}>Types</Text>
+              <View style={styles.filterOptions}>
+                {uniqueTypes.map(type => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.filterChip,
+                      activeFilters.type.includes(type) && styles.activeFilterChip
+                    ]}
+                    onPress={() => toggleFilter('type', type)}
+                  >
+                    <Text style={[
+                      styles.filterChipText,
+                      activeFilters.type.includes(type) && styles.activeFilterChipText
+                    ]}>{type}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.filterSectionTitle}>Tags</Text>
+              <View style={styles.filterOptions}>
+                {uniqueTags.map(tag => (
+                  <TouchableOpacity
+                    key={tag}
+                    style={[
+                      styles.filterChip,
+                      activeFilters.tags.includes(tag) && styles.activeFilterChip
+                    ]}
+                    onPress={() => toggleFilter('tags', tag)}
+                  >
+                    <Text style={[
+                      styles.filterChipText,
+                      activeFilters.tags.includes(tag) && styles.activeFilterChipText
+                    ]}>{tag}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            <View style={styles.filterActions}>
+              <TouchableOpacity style={styles.clearButton} onPress={clearFilters}>
+                <Text style={styles.clearButtonText}>Clear All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.applyButton} 
+                onPress={() => setFilterModalVisible(false)}
+              >
+                <Text style={styles.applyButtonText}>Show {filteredItems.length} Items</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Add Item Modal */}
       <Modal
@@ -438,5 +570,87 @@ const styles = StyleSheet.create({
     marginTop: 50,
     fontSize: 18,
     color: '#999',
+  },
+  filterButton: {
+    padding: 10,
+    marginRight: 5,
+    position: 'relative',
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF3B30',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 15,
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 10,
+    marginBottom: 10,
+    alignSelf: 'flex-start',
+  },
+  filterOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 10,
+    width: '100%',
+  },
+  filterChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginRight: 8,
+    marginBottom: 8,
+    backgroundColor: '#fff',
+  },
+  activeFilterChip: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  filterChipText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  activeFilterChipText: {
+    color: '#fff',
+  },
+  filterActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 20,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  clearButton: {
+    padding: 10,
+  },
+  clearButtonText: {
+    color: '#FF3B30',
+    fontSize: 16,
+  },
+  applyButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+  },
+  applyButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
