@@ -1,8 +1,16 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // Allow authenticated users to read and write their own data in the 'users' folder.
+    // This strictly limits access to the authenticated user's own subdirectory.
     match /users/{userId}/{allPaths=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Explicitly deny access to all other paths.
+    // This is the default behavior, but stated here for clarity.
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }
