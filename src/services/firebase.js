@@ -33,7 +33,6 @@ export const auth = getAuth(app);
 export const storage = getStorage(app);
 
 // Initialize Cloud Functions
-import { getFunctions, httpsCallable } from 'firebase/functions';
 export const functions = getFunctions(app);
 export { httpsCallable }; 
 
