@@ -133,6 +133,7 @@ export default function Outfits() {
       <Text style={styles.title}>Virtual Dressing Room</Text>
 
       <View style={styles.form}>
+        <Text style={styles.label}>Destination / Occasion</Text>
         <View style={styles.chipContainer}>
             {OCCASIONS.map(opt => (
                 <TouchableOpacity 
