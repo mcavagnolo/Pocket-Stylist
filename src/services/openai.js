@@ -166,8 +166,9 @@ export async function generateOutfitSuggestions(availableItems, criteria) {
       3. Ensure the outfits are appropriate for the temperature and destination.
 
       Please select 3 distinct outfits. For each outfit, provide:
-      1. A short summary explaining why it fits the criteria (key: "summary").
-      2. The list of item IDs used in the outfit (key: "items").
+      1. A short, catchy name (3-5 words) for the outfit (key: "name").
+      2. A short summary explaining why it fits the criteria (key: "summary").
+      3. The list of item IDs used in the outfit (key: "items").
       
       Return the result as a JSON object with a key "outfits" containing an array of the 3 suggestions.
     `;

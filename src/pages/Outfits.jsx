@@ -86,6 +86,7 @@ export default function Outfits() {
     try {
       await saveFavoriteOutfit(currentUser.uid, {
         items: outfit.items,
+        name: outfit.name, // Save the new generated title
         summary: outfit.summary,
         context: { destination, temperature, style }
       });

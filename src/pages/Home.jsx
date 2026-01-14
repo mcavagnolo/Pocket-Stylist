@@ -57,7 +57,7 @@ export default function Home() {
 
       {currentUser && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Favorite Styles</Text>
+          <Text style={styles.sectionTitle}>Favorite Outfits</Text>
           {loading ? (
             <ActivityIndicator />
           ) : favorites.length === 0 ? (

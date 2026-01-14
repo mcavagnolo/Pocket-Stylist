@@ -5,8 +5,12 @@ import { getWeatherForecast, getWeatherDescription, getLocationName } from '../s
 import { generateOutfitSuggestions } from '../services/openai';
 import { FaTrash } from 'react-icons/fa';
 
+const OCCASIONS = ['Work', 'Date Night', 'Casual', 'Party', 'Gym', 'Formal'];
+const STYLES = ['Chic', 'Casual', 'Edgy', 'Minimalist', 'Boho', 'Streetwear'];
+const TEMPS = ['Hot', 'Warm', 'Mild', 'Cool', 'Cold', 'Rainy'];
+
 export default function Schedule() {
-  const { schedule, items, addToSchedule, removeFromSchedule, favorites, isItemAvailable } = useCloset();
+  const { schedule, items, addToSchedule, removeFromSchedule, favorites, addFavorite, isItemAvailable } = useCloset();
   const [weather, setWeather] = useState({});
   const [locationName, setLocationName] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
@@ -88,6 +92,17 @@ export default function Schedule() {
   const handleSelectOutfit = (outfitItems) => {
     addToSchedule(selectedDate, outfitItems);
     setModalVisible(false);
+  };
+
+  const handleSaveFavorite = (outfit) => {
+    // Save to favorites from the generated list
+    addFavorite({
+        items: outfit.items,
+        name: outfit.name || "New Outfit",
+        summary: outfit.summary,
+        context: criteria
+    });
+    alert("Saved to favorites!");
   };
 
   const handleRemoveOutfit = (date) => {
@@ -178,35 +193,50 @@ export default function Schedule() {
             {activeTab === 'generate' ? (
                 <>
                     <View style={{ marginBottom: 20 }}>
-                    <Text style={styles.label}>Destination / Occasion</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="e.g. Work, Date Night, Gym"
-                        value={criteria.destination}
-                        onChangeText={(text) => setCriteria(prev => ({ ...prev, destination: text }))}
-                    />
-                    
-                    <Text style={styles.label}>Temperature</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="e.g. 75°F (Leave blank to use forecast)"
-                        value={criteria.temperature}
-                        onChangeText={(text) => setCriteria(prev => ({ ...prev, temperature: text }))}
-                    />
+                        <Text style={styles.label}>Destination / Occasion</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+                            {OCCASIONS.map(opt => (
+                                <TouchableOpacity 
+                                    key={opt} 
+                                    style={[styles.chip, criteria.destination === opt && styles.activeChip]}
+                                    onPress={() => setCriteria(prev => ({ ...prev, destination: opt }))}
+                                >
+                                    <Text style={[styles.chipText, criteria.destination === opt && styles.activeChipText]}>{opt}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                        
+                        <Text style={styles.label}>Temperature</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+                             {TEMPS.map(opt => (
+                                <TouchableOpacity 
+                                    key={opt} 
+                                    style={[styles.chip, criteria.temperature === opt && styles.activeChip]}
+                                    onPress={() => setCriteria(prev => ({ ...prev, temperature: opt }))}
+                                >
+                                    <Text style={[styles.chipText, criteria.temperature === opt && styles.activeChipText]}>{opt}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
 
-                    <Text style={styles.label}>Style Preference</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="e.g. Casual, Chic, Edgy"
-                        value={criteria.style}
-                        onChangeText={(text) => setCriteria(prev => ({ ...prev, style: text }))}
-                    />
+                        <Text style={styles.label}>Style Preference</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+                            {STYLES.map(opt => (
+                                <TouchableOpacity 
+                                    key={opt} 
+                                    style={[styles.chip, criteria.style === opt && styles.activeChip]}
+                                    onPress={() => setCriteria(prev => ({ ...prev, style: opt }))}
+                                >
+                                    <Text style={[styles.chipText, criteria.style === opt && styles.activeChipText]}>{opt}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
                     </View>
 
                     <TouchableOpacity 
                     style={[styles.genButton, loading && { opacity: 0.7 }]}
                     onPress={handleGenerate}
-                    disabled={loading}
+                    disabled={loading || !criteria.destination || !criteria.style}
                     >
                     {loading ? (
                         <ActivityIndicator color="#fff" />
@@ -216,11 +246,8 @@ export default function Schedule() {
                     </TouchableOpacity>
 
                     {suggestions.map((outfit, index) => (
-                    <TouchableOpacity 
-                        key={index} 
-                        style={styles.suggestionCard}
-                        onPress={() => handleSelectOutfit(outfit.items)}
-                    >
+                    <View key={index} style={styles.suggestionCard}>
+                        <Text style={styles.suggestionName}>{outfit.name}</Text>
                         <Text style={styles.suggestionSummary}>{outfit.reason || outfit.summary}</Text>
                         <ScrollView horizontal>
                         {outfit.items && outfit.items.map(id => {
@@ -235,10 +262,21 @@ export default function Schedule() {
                             );
                         })}
                         </ScrollView>
-                        <View style={styles.selectButton}>
-                        <Text style={styles.selectButtonText}>Select This Outfit</Text>
+                        <View style={{flexDirection: 'row', justifyContent: 'space-between', marginTop: 10}}>
+                            <TouchableOpacity 
+                                style={[styles.selectButton, { flex: 1, marginRight: 5 }]}
+                                onPress={() => handleSelectOutfit(outfit.items)}
+                            >
+                                <Text style={styles.selectButtonText}>Select</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.outlineButton, { flex: 1, marginLeft: 5 }]}
+                                onPress={() => handleSaveFavorite(outfit)}
+                            >
+                                <Text style={styles.outlineButtonText}>Save Fav</Text>
+                            </TouchableOpacity>
                         </View>
-                    </TouchableOpacity>
+                    </View>
                     ))}
                 </>
             ) : (
@@ -462,6 +500,47 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
   },
+  chipScroll: {
+    flexDirection: 'row',
+    marginBottom: 5,
+  },
+  chip: {
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  activeChip: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  chipText: {
+    color: '#333',
+    fontSize: 14,
+  },
+  activeChipText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  suggestionName: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  outlineButton: {
+    padding: 8,
+    borderRadius: 5,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  outlineButtonText: {
+    color: '#007AFF',
+    fontWeight: 'bold',
+  }
   favName: {
     fontWeight: 'bold',
     marginBottom: 5,
