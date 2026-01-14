@@ -115,14 +115,20 @@ export function ClosetProvider({ children }) {
   };
 
   // Schedule functions
-  const addToSchedule = async (date, outfitData) => {
+  const addToSchedule = async (date, items) => {
     if (!currentUser) return;
+    
+    // Structure: { date: "2024-01-01", items: ["id1", "id2"] }
+    const scheduleEntry = { date, items };
+    
     setSchedule(prev => ({
       ...prev,
-      [date]: { date, ...outfitData }
+      [date]: scheduleEntry
     }));
+
     try {
-      await saveScheduleToDb(currentUser.uid, date, outfitData);
+      // Pass { items } as outfitData so db saves { date, items: [...] }
+      await saveScheduleToDb(currentUser.uid, date, { items });
     } catch (error) {
       console.error("Error saving schedule:", error);
     }

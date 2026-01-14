@@ -96,7 +96,8 @@ export default function Schedule() {
       <Text style={styles.title}>Outfit Schedule</Text>
       
       {days.map(date => {
-        const outfitItemIds = schedule[date];
+        const scheduleEntry = schedule[date];
+        const outfitItemIds = scheduleEntry?.items || scheduleEntry?.itemIds; // Handle both new and old data
         const dateObj = new Date(date);
         const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
         const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
