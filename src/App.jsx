@@ -44,10 +44,11 @@ const PageWrapper = ({ children, direction }) => (
     exit="exit"
     transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
     style={{ 
-      height: 'calc(100% - 70px)', 
+      height: '100%', 
       width: '100%', 
       backgroundColor: '#ffffff',
       overflowY: 'auto',
+      WebkitOverflowScrolling: 'touch',
       overflowX: 'hidden',
       position: 'absolute',
       top: 0,

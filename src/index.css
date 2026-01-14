@@ -15,20 +15,22 @@ a {
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px; /* Width for vertical scrollbar */
-  height: 8px; /* Height for horizontal scrollbar */
+  width: 10px;
+  height: 10px;
+  -webkit-appearance: none;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1; 
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.05); 
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e0; 
-  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.3); 
+  border-radius: 5px;
+  border: 2px solid #ffffff; 
+  background-clip: content-box; 
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a0aec0; 
+  background-color: rgba(0, 0, 0, 0.5); 
 }
