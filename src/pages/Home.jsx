@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { getFavoriteOutfits, deleteFavoriteOutfit } from '../services/db';
 import { useCloset } from '../context/ClosetContext';
+import { FaTrash } from 'react-icons/fa';
 
 export default function Home() {
   const { currentUser } = useAuth();
-  const { items } = useCloset();
+  const { items, addToSchedule } = useCloset();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [selectedOutfit, setSelectedOutfit] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     async function loadFavorites() {
@@ -29,14 +33,17 @@ export default function Home() {
 
   const getItemDetails = (id) => items.find(i => i.id === id);
 
-  const handleDelete = async (id) => {
-    if (confirm("Remove this outfit from favorites?")) {
-      try {
-        await deleteFavoriteOutfit(currentUser.uid, id);
-        setFavorites(prev => prev.filter(f => f.id !== id));
-      } catch (e) {
-        console.error("Error deleting favorite", e);
-      }
+  const handleSchedule = (outfit) => {
+    setSelectedOutfit(outfit);
+    setShowDateModal(true);
+  };
+
+  const confirmSchedule = () => {
+    if (selectedOutfit && selectedDate) {
+      addToSchedule(selectedDate, selectedOutfit.items);
+      setShowDateModal(false);
+      setSelectedOutfit(null);
+      alert("Outfit scheduled!");
     }
   };
 
@@ -60,9 +67,14 @@ export default function Home() {
               <View key={fav.id} style={styles.card}>
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardSummary}>{fav.summary}</Text>
-                  <TouchableOpacity onPress={() => handleDelete(fav.id)}>
-                    <Text style={styles.deleteText}>✕</Text>
-                  </TouchableOpacity>
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <TouchableOpacity onPress={() => handleSchedule(fav)} style={styles.scheduleBtn}>
+                        <Text style={styles.scheduleBtnText}>Schedule</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleDelete(fav.id)} style={styles.deleteBtn}>
+                        <FaTrash size={16} color="#999" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 {fav.context && (
                     <Text style={styles.contextText}>
@@ -85,6 +97,28 @@ export default function Home() {
           )}
         </View>
       )}
+
+      <Modal visible={showDateModal} transparent animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Date</Text>
+            <input 
+              type="date" 
+              value={selectedDate} 
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={styles.dateInput}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setShowDateModal(false)}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.button} onPress={confirmSchedule}>
+                <Text style={styles.buttonText}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -93,7 +127,71 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    paddingBottom: 80,
+    paddingBottom: 100, // Extra padding for navbar
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  dateInput: {
+    width: '100%',
+    padding: 10,
+    marginBottom: 20,
+    border: '1px solid #ddd',
+    borderRadius: 5,
+    fontSize: 16,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  button: {
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: '#007AFF',
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#ccc',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  cancelButtonText: {
+    color: '#333',
+    fontWeight: 'bold',
+  },
+  scheduleBtn: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  scheduleBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  deleteBtn: {
+    padding: 5,
   },
   title: {
     fontSize: 28,

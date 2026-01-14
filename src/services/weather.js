@@ -1,3 +1,14 @@
+export const getLocationName = async (lat, lon) => {
+  try {
+    const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+    const data = await response.json();
+    return data.city || data.locality || "Unknown Location";
+  } catch (error) {
+    console.error("Error getting location name:", error);
+    return "Unknown Location";
+  }
+};
+
 export const getWeatherForecast = async (latitude, longitude) => {
   try {
     const response = await fetch(
