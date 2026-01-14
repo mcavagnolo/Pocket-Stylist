@@ -43,16 +43,17 @@ const PageWrapper = ({ children, direction }) => (
     animate="center"
     exit="exit"
     transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
+    className="page-wrapper"
     style={{ 
       height: '100%', 
       width: '100%', 
       backgroundColor: '#ffffff',
-      overflowY: 'auto',
-      WebkitOverflowScrolling: 'touch',
-      overflowX: 'hidden',
       position: 'absolute',
       top: 0,
       left: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden' // Let the inner ScrollView handle scrolling
     }}
   >
     {children}

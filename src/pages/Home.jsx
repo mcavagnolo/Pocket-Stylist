@@ -80,7 +80,7 @@ export default function Home() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={{flex: 1}} contentContainerStyle={styles.container}>
       
       {!currentUser && (
         <Text style={styles.welcomeText}>Welcome! Log in to see your favorite styles.</Text>
@@ -179,7 +179,6 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
     padding: 20,
     paddingBottom: 100, // Extra padding for navbar
   },

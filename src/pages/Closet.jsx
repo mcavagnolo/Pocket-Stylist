@@ -194,6 +194,7 @@ export default function Closet() {
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         numColumns={numColumns}
+        style={{ flex: 1 }}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <Text style={styles.emptyText}>
