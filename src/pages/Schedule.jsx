@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
   outlineButtonText: {
     color: '#007AFF',
     fontWeight: 'bold',
-  }
+  },
   favName: {
     fontWeight: 'bold',
     marginBottom: 5,
