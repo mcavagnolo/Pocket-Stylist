@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator, Scr
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
 import { analyzeClothingItem } from '../services/openai';
-import { resizeImage } from '../utils/image';
+import { resizeImage, cropImage } from '../utils/image';
 
 export default function CameraPage() {
   const [image, setImage] = useState(null);
@@ -43,6 +43,19 @@ export default function CameraPage() {
     setLoading(true);
     try {
       const result = await analyzeClothingItem(base64Image);
+      
+      // If we got a bounding box, crop the image
+      if (result.boundingBox) {
+          try {
+             const cropped = await cropImage(base64Image, result.boundingBox, 0.05); // 5% padding
+             setImage(cropped);
+             // Note: we continue using the 'result' from the original image analysis,
+             // because the cropping is just for display/storage cleanup.
+          } catch(cropError) {
+             console.log("Auto-crop failed, using original", cropError);
+          }
+      }
+
       setAnalysis(result);
     } catch (error) {
       console.error("Analysis failed", error);

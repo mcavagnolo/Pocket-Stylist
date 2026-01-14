@@ -56,7 +56,7 @@ export async function analyzeClothingItem(base64Image) {
           {
             role: "user",
             content: [
-              { type: "text", text: "Analyze this clothing item. Return a JSON object with the following fields: 'type' (e.g., shirt, pants, dress), 'color' (primary color), 'style' (e.g., casual, formal, sporty), 'tags' (array of 3-5 descriptive keywords), and 'refreshCycle' (suggested number of days before re-wearing, e.g., 1 for underwear, 7 for shirts, 14 for pants)." },
+              { type: "text", text: "Analyze this clothing item. Return a JSON object with the following fields: 'type' (e.g., shirt, pants, dress), 'color' (primary color), 'style' (e.g., casual, formal, sporty), 'tags' (array of 3-5 descriptive keywords), 'refreshCycle' (number of days before re-wearing), and 'boundingBox' (an array of 4 numbers [ymin, xmin, ymax, xmax] between 0 and 1 representing the tight bounding box of the item)." },
               {
                 type: "image_url",
                 image_url: {
@@ -96,6 +96,23 @@ export async function analyzeClothingItem(base64Image) {
     const style = getMode(results.map(r => r.style));
     const refreshCycle = parseInt(getMode(results.map(r => r.refreshCycle)));
 
+    // Calculate consensus for bounding box (average)
+    const validBoxes = results
+        .map(r => r.boundingBox)
+        .filter(b => Array.isArray(b) && b.length === 4);
+    
+    let boundingBox = null;
+    if (validBoxes.length > 0) {
+        const avgBox = [0, 0, 0, 0];
+        validBoxes.forEach(box => {
+            avgBox[0] += box[0];
+            avgBox[1] += box[1];
+            avgBox[2] += box[2];
+            avgBox[3] += box[3];
+        });
+        boundingBox = avgBox.map(v => v / validBoxes.length);
+    }
+
     // Calculate consensus for tags (must appear in at least 2 results)
     const allTags = results.flatMap(r => r.tags || []);
     const tagCounts = {};
@@ -116,7 +133,8 @@ export async function analyzeClothingItem(base64Image) {
       color,
       style,
       tags: consensusTags,
-      refreshCycle
+      refreshCycle,
+      boundingBox
     };
 
   } catch (error) {
