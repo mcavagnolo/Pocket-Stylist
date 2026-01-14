@@ -153,7 +153,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingBottom: 60, // Space for NavBar
+    position: 'relative', // Ensure PageWrapper stays within this bounds
+    marginBottom: 80, // Space for NavBar (which is absolute bottom)
     overflow: 'hidden', // Let children handle scrolling
   },
 });
