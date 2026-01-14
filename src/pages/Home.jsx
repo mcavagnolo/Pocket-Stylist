@@ -49,7 +49,6 @@ export default function Home() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Pocket Stylist</Text>
       
       {!currentUser && (
         <Text style={styles.welcomeText}>Welcome! Log in to see your favorite styles.</Text>

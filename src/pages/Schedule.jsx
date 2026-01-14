@@ -4,10 +4,7 @@ import { useCloset } from '../context/ClosetContext';
 import { getWeatherForecast, getWeatherDescription, getLocationName } from '../services/weather';
 import { generateOutfitSuggestions } from '../services/openai';
 import { FaTrash } from 'react-icons/fa';
-
-const OCCASIONS = ['Work', 'Date Night', 'Casual', 'Party', 'Gym', 'Formal'];
-const STYLES = ['Chic', 'Casual', 'Edgy', 'Minimalist', 'Boho', 'Streetwear'];
-const TEMPS = ['Hot', 'Warm', 'Mild', 'Cool', 'Cold', 'Rainy'];
+import { OCCASIONS, STYLES, TEMPS } from '../data/constants';
 
 export default function Schedule() {
   const { schedule, items, addToSchedule, removeFromSchedule, favorites, addFavorite, isItemAvailable } = useCloset();
@@ -176,6 +173,8 @@ export default function Schedule() {
           
           <View style={styles.tabContainer}>
             <TouchableOpacity 
+            Plan for {selectedDate ? new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) : ''}
+          
                 style={[styles.tab, activeTab === 'generate' && styles.activeTab]} 
                 onPress={() => setActiveTab('generate')}
             >
@@ -534,6 +533,8 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 5,
     alignItems: 'center',
+    justifyContent: 'center', // Center content vertically
+    height: 35, // Fixed height to match Select button if it has one, or let both rely on padding
     borderWidth: 1,
     borderColor: '#007AFF',
   },

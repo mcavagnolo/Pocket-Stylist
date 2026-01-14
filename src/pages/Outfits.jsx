@@ -5,6 +5,7 @@ import { useCloset } from '../context/ClosetContext';
 import { useAuth } from '../context/AuthContext';
 import { generateOutfitSuggestions } from '../services/openai';
 import { saveOutfitPreference, saveFavoriteOutfit } from '../services/db';
+import { OCCASIONS, STYLES, TEMPS } from '../data/constants';
 
 export default function Outfits() {
   const { items, isItemAvailable, addToSchedule } = useCloset();
@@ -119,34 +120,48 @@ export default function Outfits() {
       <Text style={styles.title}>Virtual Dressing Room</Text>
 
       <View style={styles.form}>
-        <Text style={styles.label}>Destination / Occasion</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. Work, Date Night, Gym"
-          value={destination}
-          onChangeText={setDestination}
-        />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+            {OCCASIONS.map(opt => (
+                <TouchableOpacity 
+                    key={opt} 
+                    style={[styles.chip, destination === opt && styles.activeChip]}
+                    onPress={() => setDestination(opt)}
+                >
+                    <Text style={[styles.chipText, destination === opt && styles.activeChipText]}>{opt}</Text>
+                </TouchableOpacity>
+            ))}
+        </ScrollView>
 
         <Text style={styles.label}>Temperature</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. 75°F, Cold, Rainy"
-          value={temperature}
-          onChangeText={setTemperature}
-        />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+            {TEMPS.map(opt => (
+                <TouchableOpacity 
+                    key={opt} 
+                    style={[styles.chip, temperature === opt && styles.activeChip]}
+                    onPress={() => setTemperature(opt)}
+                >
+                    <Text style={[styles.chipText, temperature === opt && styles.activeChipText]}>{opt}</Text>
+                </TouchableOpacity>
+            ))}
+        </ScrollView>
 
         <Text style={styles.label}>Style Preference</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. Casual, Chic, Edgy"
-          value={style}
-          onChangeText={setStyle}
-        />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+            {STYLES.map(opt => (
+                <TouchableOpacity 
+                    key={opt} 
+                    style={[styles.chip, style === opt && styles.activeChip]}
+                    onPress={() => setStyle(opt)}
+                >
+                    <Text style={[styles.chipText, style === opt && styles.activeChipText]}>{opt}</Text>
+                </TouchableOpacity>
+            ))}
+        </ScrollView>
 
         <TouchableOpacity 
           style={[styles.button, loading && styles.disabledButton]} 
           onPress={handleGenerate}
-          disabled={loading}
+          disabled={loading || !destination || !style}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
@@ -161,6 +176,7 @@ export default function Outfits() {
           <Text style={styles.subtitle}>Suggestions</Text>
           {suggestions.map((outfit, index) => (
             <View key={index} style={styles.outfitCard}>
+              <Text style={styles.outfitName}>{outfit.name}</Text>
               <Text style={styles.outfitSummary}>{outfit.summary}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.itemsRow}>
                 {outfit.items.map(itemId => {
@@ -168,8 +184,7 @@ export default function Outfits() {
                   if (!item) return null;
                   return (
                     <View key={itemId} style={styles.itemPreview}>
-                      <Image source={{ uri: item.imageUri }} style={styles.itemImage} />
-                      <Text style={styles.itemType}>{item.type}</Text>
+                      <Image source={{ uri: item.imageUri || item.image }} style={styles.itemImage} />
                     </View>
                   );
                 })}
@@ -194,7 +209,8 @@ export default function Outfits() {
                 </View>
                 
                 <View style={{flexDirection: 'row', gap: 10}}>
-                  <TouchableOpacity style={[styles.scheduleButton, {backgroundColor: '#34C759'}]} onPress={() => handleSave(outfit)}>
+                  <TouchableOpacity style={styles.outlineButton} onPress={() => handleSave(outfit)}>
+                    <Text style={styles.outlineButtonText}>Save Favn, {backgroundColor: '#34C759'}]} onPress={() => handleSave(outfit)}>
                     <Text style={styles.scheduleButtonText}>Save</Text>
                   </TouchableOpacity>
                   
@@ -240,6 +256,50 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
+    marginTop: 10,
+  },
+  chipScroll: {
+    flexDirection: 'row',
+    marginBottom: 5,
+  },
+  chip: {
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  activeChip: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  chipText: {
+    color: '#333',
+    fontSize: 14,
+  },
+  activeChipText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  outfitName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  outlineButton: {
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#007AFF',
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+  },
+  outlineButtonText: {
+    color: '#007AFF',
+    fontWeight: 'bold',
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
@@ -353,10 +413,10 @@ const styles = StyleSheet.create({
   },
   scheduleButton: {
     backgroundColor: '#34C759',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+    padding: 10,
+    borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   scheduleButtonText: {
     color: '#fff',
