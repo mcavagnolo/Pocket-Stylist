@@ -6,7 +6,11 @@ import {
   updateItemInDb, 
   deleteItemFromDb,
   getUserSchedule, 
-  saveScheduleToDb 
+  saveScheduleToDb,
+  deleteScheduleFromDb,
+  getFavoriteOutfits,
+  saveFavoriteOutfit,
+  deleteFavoriteOutfit
 } from '../services/db';
 import { uploadImageToStorage } from '../services/storage';
 
@@ -20,6 +24,7 @@ export function ClosetProvider({ children }) {
   const { currentUser } = useAuth();
   const [items, setItems] = useState([]);
   const [schedule, setSchedule] = useState({});
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Real-time subscription to Firestore
@@ -32,11 +37,13 @@ export function ClosetProvider({ children }) {
 
       // Fetch schedule separately (can be made real-time later if needed)
       getUserSchedule(currentUser.uid).then(setSchedule);
+      getFavoriteOutfits(currentUser.uid).then(setFavorites);
 
       return () => unsubscribe();
     } else {
       setItems([]);
       setSchedule({});
+      setFavorites([]);
       setLoading(false);
     }
   }, [currentUser]);
@@ -134,6 +141,49 @@ export function ClosetProvider({ children }) {
     }
   };
 
+  const removeFromSchedule = async (date) => {
+    if (!currentUser) return;
+    const newSchedule = { ...schedule };
+    delete newSchedule[date];
+    setSchedule(newSchedule);
+    try {
+      await deleteScheduleFromDb(currentUser.uid, date);
+    } catch (error) {
+      console.error("Error removing from schedule:", error);
+    }
+  };
+
+  const addFavorite = async (outfit) => {
+    if (!currentUser) return;
+    try {
+      await saveFavoriteOutfit(currentUser.uid, outfit);
+      const updated = await getFavoriteOutfits(currentUser.uid);
+      setFavorites(updated);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const removeFavorite = async (id) => {
+      if (!currentUser) return;
+      try {
+          await deleteFavoriteOutfit(currentUser.uid, id);
+          setFavorites(prev => prev.filter(f => f.id !== id));
+      } catch (error) {
+          console.error(error);
+      }
+  };
+
+  const markAsWorn = async (itemIds, date) => {
+    if (!currentUser || !itemIds) return;
+    try {
+        const promises = itemIds.map(id => updateItemInDb(currentUser.uid, id, { lastWorn: date }));
+        await Promise.all(promises);
+    } catch (error) {
+        console.error("Error marking worn:", error);
+    }
+  };
+
   const isItemAvailable = (item) => {
     if (!item.lastWorn) return true;
     const lastWornDate = new Date(item.lastWorn);
@@ -146,11 +196,16 @@ export function ClosetProvider({ children }) {
   const value = {
     items,
     schedule,
+    favorites,
     loading,
     addItem,
     updateItem,
     deleteItem,
     addToSchedule,
+    removeFromSchedule,
+    addFavorite,
+    removeFavorite,
+    markAsWorn,
     isItemAvailable
   };
 

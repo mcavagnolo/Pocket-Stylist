@@ -44,7 +44,7 @@ const PageWrapper = ({ children, direction }) => (
     exit="exit"
     transition={{ type: "tween", ease: "easeInOut", duration: 0.3 }}
     style={{ 
-      height: '100%', 
+      height: 'calc(100% - 70px)', 
       width: '100%', 
       backgroundColor: '#ffffff',
       overflowY: 'auto',
@@ -52,7 +52,6 @@ const PageWrapper = ({ children, direction }) => (
       position: 'absolute',
       top: 0,
       left: 0,
-      paddingBottom: '80px' // Ensure content isn't hidden behind NavBar
     }}
   >
     {children}

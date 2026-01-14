@@ -12,3 +12,23 @@ a {
   color: #ff8e52; /* theme.colors.highlight */
   text-decoration: none;
 }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px; /* Width for vertical scrollbar */
+  height: 8px; /* Height for horizontal scrollbar */
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e0; 
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0; 
+}

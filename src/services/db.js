@@ -142,3 +142,8 @@ export const getUserSchedule = async (userId) => {
   });
   return schedule;
 };
+
+export const deleteScheduleFromDb = async (userId, date) => {
+  const scheduleRef = doc(getDb(), 'users', userId, 'schedule', date);
+  await deleteDoc(scheduleRef);
+};

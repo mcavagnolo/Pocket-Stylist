@@ -19,7 +19,7 @@ export default function NavBar({ onNavigate }) {
     { name: 'Home', path: '/' },
     { name: 'Closet', path: '/closet' },
     { name: 'Style', path: '/outfits' },
-    { name: 'Schedule', path: '/schedule' },
+    { name: 'Plan', path: '/schedule' },
   ];
 
   return (
