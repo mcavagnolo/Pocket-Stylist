@@ -483,7 +483,10 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 5,
     alignItems: 'center',
-    marginTop: 10,
+    justifyContent: 'center',
+    height: 35,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   selectButtonText: {
     color: '#fff',

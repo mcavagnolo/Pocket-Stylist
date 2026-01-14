@@ -65,8 +65,11 @@ export default function Home() {
             favorites.map((fav) => (
               <View key={fav.id} style={styles.card}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.cardSummary}>{fav.summary}</Text>
-                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <View style={{flex: 1, marginRight: 10}}>
+                    <Text style={styles.favName}>{fav.name || "Untitled Outfit"}</Text>
+                    <Text style={styles.cardSummary}>{fav.summary}</Text>
+                  </View>
+                  <View style={{flexDirection: 'row', alignItems: 'flex-start'}}>
                     <TouchableOpacity onPress={() => handleSchedule(fav)} style={styles.scheduleBtn}>
                         <Text style={styles.scheduleBtnText}>Schedule</Text>
                     </TouchableOpacity>
@@ -227,14 +230,19 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'start',
-    marginBottom: 5,
+    marginBottom: 10,
+    alignItems: 'flex-start',
+  },
+  favName: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 4,
+    color: '#333',
   },
   cardSummary: {
-    fontSize: 16,
-    fontWeight: '600',
-    flex: 1,
-    marginRight: 10,
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
   },
   deleteText: {
     fontSize: 18,

@@ -299,8 +299,6 @@ const styles = StyleSheet.create({
   outlineButtonText: {
     color: '#007AFF',
     fontWeight: 'bold',
-    fontWeight: 'bold',
-    marginBottom: 20,
     textAlign: 'center',
   },
   form: {
@@ -416,6 +414,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent', // Match outline button sizing
   },
   scheduleButtonText: {
     color: '#fff',
