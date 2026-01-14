@@ -210,8 +210,7 @@ export default function Outfits() {
                 
                 <View style={{flexDirection: 'row', gap: 10}}>
                   <TouchableOpacity style={styles.outlineButton} onPress={() => handleSave(outfit)}>
-                    <Text style={styles.outlineButtonText}>Save Favn, {backgroundColor: '#34C759'}]} onPress={() => handleSave(outfit)}>
-                    <Text style={styles.scheduleButtonText}>Save</Text>
+                    <Text style={styles.outlineButtonText}>Save Fav</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity style={styles.scheduleButton} onPress={() => handleSchedule(outfit)}>
