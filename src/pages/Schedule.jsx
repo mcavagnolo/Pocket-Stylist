@@ -193,7 +193,7 @@ export default function Schedule() {
                 <>
                     <View style={{ marginBottom: 20 }}>
                         <Text style={styles.label}>Destination / Occasion</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+                        <View style={styles.chipContainer}>
                             {OCCASIONS.map(opt => (
                                 <TouchableOpacity 
                                     key={opt} 
@@ -203,10 +203,10 @@ export default function Schedule() {
                                     <Text style={[styles.chipText, criteria.destination === opt && styles.activeChipText]}>{opt}</Text>
                                 </TouchableOpacity>
                             ))}
-                        </ScrollView>
+                        </View>
                         
                         <Text style={styles.label}>Temperature</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+                        <View style={styles.chipContainer}>
                              {TEMPS.map(opt => (
                                 <TouchableOpacity 
                                     key={opt} 
@@ -216,10 +216,10 @@ export default function Schedule() {
                                     <Text style={[styles.chipText, criteria.temperature === opt && styles.activeChipText]}>{opt}</Text>
                                 </TouchableOpacity>
                             ))}
-                        </ScrollView>
+                        </View>
 
                         <Text style={styles.label}>Style Preference</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+                        <View style={styles.chipContainer}>
                             {STYLES.map(opt => (
                                 <TouchableOpacity 
                                     key={opt} 
@@ -229,7 +229,7 @@ export default function Schedule() {
                                     <Text style={[styles.chipText, criteria.style === opt && styles.activeChipText]}>{opt}</Text>
                                 </TouchableOpacity>
                             ))}
-                        </ScrollView>
+                        </View>
                     </View>
 
                     <TouchableOpacity 
@@ -293,7 +293,7 @@ export default function Schedule() {
                                         return <Image key={id} source={{ uri: item.imageUri || item.image }} style={styles.favImage} />;
                                     })}
                                 </ScrollView>
-                                <View style={styles.selectButton}>
+                                <View style={[styles.selectButton, { marginTop: 10 }]}>
                                     <Text style={styles.selectButtonText}>Select</Text>
                                 </View>
                             </TouchableOpacity>
@@ -502,8 +502,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
   },
-  chipScroll: {
+  chipContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
     marginBottom: 5,
   },
   chip: {
@@ -511,7 +513,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 15,
     borderRadius: 20,
-    marginRight: 10,
     borderWidth: 1,
     borderColor: '#eee',
   },

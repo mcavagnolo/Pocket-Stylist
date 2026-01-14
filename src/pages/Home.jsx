@@ -3,16 +3,17 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIn
 import { useAuth } from '../context/AuthContext';
 import { getFavoriteOutfits, deleteFavoriteOutfit } from '../services/db';
 import { useCloset } from '../context/ClosetContext';
-import { FaTrash } from 'react-icons/fa';
+import { FaTrash, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
 export default function Home() {
   const { currentUser } = useAuth();
-  const { items, addToSchedule } = useCloset();
+  const { items, addToSchedule, schedule } = useCloset();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showDateModal, setShowDateModal] = useState(false);
   const [selectedOutfit, setSelectedOutfit] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [expandedItems, setExpandedItems] = useState({});
 
   useEffect(() => {
     async function loadFavorites() {
@@ -33,18 +34,49 @@ export default function Home() {
 
   const getItemDetails = (id) => items.find(i => i.id === id);
 
+  const toggleExpand = (id) => {
+    setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to remove this favorite?")) {
+        try {
+            await deleteFavoriteOutfit(currentUser.uid, id);
+            setFavorites(prev => prev.filter(f => f.id !== id));
+        } catch (error) {
+            console.error("Error removing favorite:", error);
+            alert("Failed to remove favorite.");
+        }
+    }
+  };
+
   const handleSchedule = (outfit) => {
     setSelectedOutfit(outfit);
     setShowDateModal(true);
   };
 
-  const confirmSchedule = () => {
-    if (selectedOutfit && selectedDate) {
-      addToSchedule(selectedDate, selectedOutfit.items);
+  const confirmSchedule = (date) => {
+    if (selectedOutfit && date) {
+      // Check if date is already booked is handled in UI but we force it here too
+      if (schedule && schedule[date]) {
+         if (!window.confirm("This date already has an outfit. Overwrite?")) return;
+      }
+      addToSchedule(date, selectedOutfit.items);
       setShowDateModal(false);
       setSelectedOutfit(null);
       alert("Outfit scheduled!");
     }
+  };
+
+  const getNext7Days = () => {
+    const days = [];
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        days.push(d.toISOString().split('T')[0]);
+    }
+    return days;
   };
 
   return (
@@ -67,9 +99,8 @@ export default function Home() {
                 <View style={styles.cardHeader}>
                   <View style={{flex: 1, marginRight: 10}}>
                     <Text style={styles.favName}>{fav.name || "Untitled Outfit"}</Text>
-                    <Text style={styles.cardSummary}>{fav.summary}</Text>
                   </View>
-                  <View style={{flexDirection: 'row', alignItems: 'flex-start'}}>
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
                     <TouchableOpacity onPress={() => handleSchedule(fav)} style={styles.scheduleBtn}>
                         <Text style={styles.scheduleBtnText}>Schedule</Text>
                     </TouchableOpacity>
@@ -78,11 +109,13 @@ export default function Home() {
                     </TouchableOpacity>
                   </View>
                 </View>
+                
                 {fav.context && (
                     <Text style={styles.contextText}>
                         {fav.context.destination} • {fav.context.style}
                     </Text>
                 )}
+
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.itemsRow}>
                   {fav.items && fav.items.map(itemId => {
                     const item = getItemDetails(itemId);
@@ -94,6 +127,18 @@ export default function Home() {
                     );
                   })}
                 </ScrollView>
+
+                <View style={styles.summaryContainer}>
+                    <TouchableOpacity onPress={() => toggleExpand(fav.id)} style={styles.expandRow}>
+                        <Text style={styles.expandText}>
+                            {expandedItems[fav.id] ? "Hide Details" : "Show Details"}
+                        </Text>
+                        {expandedItems[fav.id] ? <FaChevronUp size={12} color="#666"/> : <FaChevronDown size={12} color="#666"/>}
+                    </TouchableOpacity>
+                    {expandedItems[fav.id] && (
+                        <Text style={styles.cardSummary}>{fav.summary}</Text>
+                    )}
+                </View>
               </View>
             ))
           )}
@@ -104,20 +149,27 @@ export default function Home() {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Select Date</Text>
-            <input 
-              type="date" 
-              value={selectedDate} 
-              onChange={(e) => setSelectedDate(e.target.value)}
-              style={styles.dateInput}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setShowDateModal(false)}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.button} onPress={confirmSchedule}>
-                <Text style={styles.buttonText}>Confirm</Text>
-              </TouchableOpacity>
+            <View style={styles.dateList}>
+                {getNext7Days().map(date => {
+                    const isBooked = schedule && schedule[date];
+                    const dateObj = new Date(date);
+                    const label = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                    
+                    return (
+                        <TouchableOpacity 
+                            key={date} 
+                            style={[styles.dateOption, isBooked && styles.bookedDate]} 
+                            onPress={() => confirmSchedule(date)}
+                        >
+                            <Text style={[styles.dateOptionText, isBooked && styles.bookedDateText]}>{label}</Text>
+                            {isBooked ? <Text style={styles.bookedTag}>Booked</Text> : <Text style={styles.availableTag}>Available</Text>}
+                        </TouchableOpacity>
+                    );
+                })}
             </View>
+            <TouchableOpacity style={[styles.button, styles.cancelButton, {marginTop: 10}]} onPress={() => setShowDateModal(false)}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -150,27 +202,51 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: 'center',
   },
-  dateInput: {
-    width: '100%',
-    padding: 10,
-    marginBottom: 20,
-    border: '1px solid #ddd',
-    borderRadius: 5,
-    fontSize: 16,
+  dateList: {
+    gap: 8,
+    maxHeight: 300,
+    overflow: 'auto',
   },
-  modalButtons: {
+  dateOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: '#eee',
+    cursor: 'pointer',
+  },
+  bookedDate: {
+    backgroundColor: '#fff0f0',
+    borderColor: '#ffcccb',
+  },
+  dateOptionText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  bookedDateText: {
+    color: '#d32f2f',
+  },
+  availableTag: {
+    fontSize: 12,
+    color: 'green',
+    fontWeight: 'bold',
+  },
+  bookedTag: {
+    fontSize: 12,
+    color: '#d32f2f',
+    fontWeight: 'bold',
   },
   button: {
-    padding: 10,
-    borderRadius: 5,
-    backgroundColor: '#007AFF',
-    minWidth: 80,
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
+    marginTop: 10,
   },
   cancelButton: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#eee',
   },
   buttonText: {
     color: '#fff',
@@ -230,19 +306,33 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
-    alignItems: 'flex-start',
+    marginBottom: 5,
+    alignItems: 'center',
   },
   favName: {
     fontWeight: 'bold',
     fontSize: 16,
-    marginBottom: 4,
     color: '#333',
+  },
+  expandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    marginTop: 10,
+  },
+  expandText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '600',
   },
   cardSummary: {
     fontSize: 14,
     color: '#666',
     lineHeight: 20,
+    marginTop: 5,
   },
   deleteText: {
     fontSize: 18,

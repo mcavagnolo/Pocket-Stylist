@@ -8,7 +8,7 @@ import { saveOutfitPreference, saveFavoriteOutfit } from '../services/db';
 import { OCCASIONS, STYLES, TEMPS } from '../data/constants';
 
 export default function Outfits() {
-  const { items, isItemAvailable, addToSchedule } = useCloset();
+  const { items, isItemAvailable, addToSchedule, schedule } = useCloset();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [destination, setDestination] = useState('');
@@ -18,8 +18,18 @@ export default function Outfits() {
   const [suggestions, setSuggestions] = useState([]);
   const [selectedOutfit, setSelectedOutfit] = useState(null);
   const [showDateModal, setShowDateModal] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [preferences, setPreferences] = useState({});
+
+  const getNext7Days = () => {
+    const days = [];
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        days.push(d.toISOString().split('T')[0]);
+    }
+    return days;
+  };
 
   const handleGenerate = async () => {
     if (!destination || !temperature || !style) {
@@ -103,9 +113,12 @@ export default function Outfits() {
     setShowDateModal(true);
   };
 
-  const confirmSchedule = () => {
-    if (selectedOutfit && selectedDate) {
-      addToSchedule(selectedDate, selectedOutfit.items);
+  const confirmSchedule = (date) => {
+    if (selectedOutfit && date) {
+      if (schedule && schedule[date]) {
+         if (!window.confirm("This date already has an outfit. Overwrite?")) return;
+      }
+      addToSchedule(date, selectedOutfit.items);
       setShowDateModal(false);
       setSelectedOutfit(null);
       alert("Outfit scheduled!");
@@ -120,7 +133,7 @@ export default function Outfits() {
       <Text style={styles.title}>Virtual Dressing Room</Text>
 
       <View style={styles.form}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+        <View style={styles.chipContainer}>
             {OCCASIONS.map(opt => (
                 <TouchableOpacity 
                     key={opt} 
@@ -130,10 +143,10 @@ export default function Outfits() {
                     <Text style={[styles.chipText, destination === opt && styles.activeChipText]}>{opt}</Text>
                 </TouchableOpacity>
             ))}
-        </ScrollView>
+        </View>
 
         <Text style={styles.label}>Temperature</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+        <View style={styles.chipContainer}>
             {TEMPS.map(opt => (
                 <TouchableOpacity 
                     key={opt} 
@@ -143,10 +156,10 @@ export default function Outfits() {
                     <Text style={[styles.chipText, temperature === opt && styles.activeChipText]}>{opt}</Text>
                 </TouchableOpacity>
             ))}
-        </ScrollView>
+        </View>
 
         <Text style={styles.label}>Style Preference</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+        <View style={styles.chipContainer}>
             {STYLES.map(opt => (
                 <TouchableOpacity 
                     key={opt} 
@@ -156,7 +169,8 @@ export default function Outfits() {
                     <Text style={[styles.chipText, style === opt && styles.activeChipText]}>{opt}</Text>
                 </TouchableOpacity>
             ))}
-        </ScrollView>
+        </View>
+
 
         <TouchableOpacity 
           style={[styles.button, loading && styles.disabledButton]} 
@@ -227,20 +241,27 @@ export default function Outfits() {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Select Date</Text>
-            <input 
-              type="date" 
-              value={selectedDate} 
-              onChange={(e) => setSelectedDate(e.target.value)}
-              style={styles.dateInput}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setShowDateModal(false)}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.button} onPress={confirmSchedule}>
-                <Text style={styles.buttonText}>Confirm</Text>
-              </TouchableOpacity>
+            <View style={styles.dateList}>
+                {getNext7Days().map(date => {
+                    const isBooked = schedule && schedule[date];
+                    const dateObj = new Date(date);
+                    const label = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                    
+                    return (
+                        <TouchableOpacity 
+                            key={date} 
+                            style={[styles.dateOption, isBooked && styles.bookedDate]} 
+                            onPress={() => confirmSchedule(date)}
+                        >
+                            <Text style={[styles.dateOptionText, isBooked && styles.bookedDateText]}>{label}</Text>
+                            {isBooked ? <Text style={styles.bookedTag}>Booked</Text> : <Text style={styles.availableTag}>Available</Text>}
+                        </TouchableOpacity>
+                    );
+                })}
             </View>
+            <TouchableOpacity style={[styles.button, styles.cancelButton, {marginTop: 10}]} onPress={() => setShowDateModal(false)}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -257,13 +278,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginTop: 10,
   },
-  chipScroll: {
+  chipContainer: {
     flexDirection: 'row',
-    marginBottom: 5,
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
   },
   chip: {
     backgroundColor: '#f0f0f0',
     paddingVertical: 8,
+    marginBottom: 0, 
     paddingHorizontal: 15,
     borderRadius: 20,
     marginRight: 10,
@@ -438,27 +462,56 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 20,
+    width: '100%', 
+    textAlign: 'center',
   },
-  dateInput: {
-    padding: 10,
-    fontSize: 16,
-    marginBottom: 20,
+  dateList: {
+    gap: 8,
+    maxHeight: 300,
     width: '100%',
-    border: '1px solid #ddd',
-    borderRadius: 5,
+    overflow: 'auto',
   },
-  modalButtons: {
+  dateOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: '#eee',
+    cursor: 'pointer',
+  },
+  bookedDate: {
+    backgroundColor: '#fff0f0',
+    borderColor: '#ffcccb',
+  },
+  dateOptionText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  bookedDateText: {
+    color: '#d32f2f',
+  },
+  availableTag: {
+    fontSize: 12,
+    color: 'green',
+    fontWeight: 'bold',
+  },
+  bookedTag: {
+    fontSize: 12,
+    color: '#d32f2f',
+    fontWeight: 'bold',
   },
   cancelButton: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    marginRight: 10,
+    backgroundColor: '#eee',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
   },
   cancelButtonText: {
-    color: '#333',
+    color: '#333', 
+    fontWeight: 'bold',
   },
 });
