@@ -100,6 +100,26 @@ export const saveOutfitPreference = async (userId, outfitData) => {
   });
 };
 
+export const saveFavoriteOutfit = async (userId, outfit) => {
+  const favoritesRef = collection(getDb(), 'users', userId, 'favorites');
+  await addDoc(favoritesRef, {
+    ...outfit,
+    createdAt: new Date().toISOString()
+  });
+};
+
+export const getFavoriteOutfits = async (userId) => {
+  const favoritesRef = collection(getDb(), 'users', userId, 'favorites');
+  const q = query(favoritesRef, orderBy('createdAt', 'desc'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const deleteFavoriteOutfit = async (userId, outfitId) => {
+  const outfitRef = doc(getDb(), 'users', userId, 'favorites', outfitId);
+  await deleteDoc(outfitRef);
+};
+
 export const deleteItemFromDb = async (userId, itemId) => {
   const itemRef = doc(getDb(), 'users', userId, 'closet', itemId);
   await deleteDoc(itemRef);

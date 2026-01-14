@@ -1,20 +1,41 @@
 import OpenAI from 'openai';
+import { getDoc, doc } from 'firebase/firestore';
+import { getDb } from './firebase';
 
-// Initialize OpenAI client
-// Note: In a production app, you should proxy these requests through a backend
-// to avoid exposing your API key. For this PWA prototype, we'll use the key from env or localStorage.
-const getApiKey = () => {
-  return import.meta.env.VITE_OPENAI_API_KEY || localStorage.getItem('openai_api_key');
+// Helper to fetch global key from Firestore if needed
+async function getGlobalApiKey() {
+  try {
+    const docRef = doc(getDb(), 'settings', 'global');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data().openai_api_key;
+    }
+  } catch (e) {
+    console.log("Could not fetch global key", e);
+  }
+  return null;
+}
+
+const getApiKey = async () => {
+  // 1. Check environment variable (Secure backend storage for build)
+  if (import.meta.env.VITE_OPENAI_API_KEY) return import.meta.env.VITE_OPENAI_API_KEY;
+  
+  // 2. Check local storage (User provided)
+  const localKey = localStorage.getItem('openai_api_key');
+  if (localKey) return localKey;
+
+  // 3. Fallback to Firestore (Backend storage for runtime)
+  return await getGlobalApiKey();
 };
 
-const getClient = () => {
-  const apiKey = getApiKey();
+const getClient = async () => {
+  const apiKey = await getApiKey();
   if (!apiKey) {
-    throw new Error("OpenAI API Key not found. Please add it in the Account settings.");
+    throw new Error("OpenAI API Key not found. Please add it in the Account settings or contact admin.");
   }
   return new OpenAI({
     apiKey: apiKey,
-    dangerouslyAllowBrowser: true // Required for client-side usage
+    dangerouslyAllowBrowser: true 
   });
 };
 
@@ -25,7 +46,7 @@ const getClient = () => {
  */
 export async function analyzeClothingItem(base64Image) {
   try {
-    const openai = getClient();
+    const openai = await getClient();
 
     // Helper function to run a single analysis
     const runAnalysis = async () => {
@@ -145,13 +166,13 @@ export async function generateOutfitSuggestions(availableItems, criteria) {
       3. Ensure the outfits are appropriate for the temperature and destination.
 
       Please select 3 distinct outfits. For each outfit, provide:
-      1. A short summary explaining why it fits the criteria.
-      2. The list of item IDs used in the outfit.
+      1. A short summary explaining why it fits the criteria (key: "summary").
+      2. The list of item IDs used in the outfit (key: "items").
       
       Return the result as a JSON object with a key "outfits" containing an array of the 3 suggestions.
     `;
 
-    const openai = getClient();
+    const openai = await getClient();
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -162,7 +183,7 @@ export async function generateOutfitSuggestions(availableItems, criteria) {
     });
 
     const result = JSON.parse(response.choices[0].message.content);
-    return result.outfits;
+    return Array.isArray(result?.outfits) ? result.outfits : [];
   } catch (error) {
     console.error("Error generating outfits:", error);
     return [];

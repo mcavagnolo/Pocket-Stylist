@@ -13,7 +13,8 @@ import {
   signOut,
   sendPasswordResetEmail,
   onAuthStateChanged,
-  updateProfile
+  updateProfile,
+  sendEmailVerification
 } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 
@@ -82,4 +83,8 @@ export const resetPassword = (email) => {
 
 export const updateUserProfile = (user, data) => {
   return updateProfile(user, data);
+};
+
+export const verifyEmail = (user) => {
+  return sendEmailVerification(user);
 };

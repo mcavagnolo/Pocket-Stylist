@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
 import { useAuth } from '../context/AuthContext';
 import { generateOutfitSuggestions } from '../services/openai';
-import { saveOutfitPreference } from '../services/db';
+import { saveOutfitPreference, saveFavoriteOutfit } from '../services/db';
 
 export default function Outfits() {
   const { items, isItemAvailable, addToSchedule } = useCloset();
@@ -74,6 +74,25 @@ export default function Outfits() {
     } catch (error) {
       console.error("Error saving preference:", error);
       alert("Failed to save preference");
+    }
+  };
+
+  const handleSave = async (outfit) => {
+    if (!currentUser) {
+      alert("Please log in to save outfits.");
+      return;
+    }
+    
+    try {
+      await saveFavoriteOutfit(currentUser.uid, {
+        items: outfit.items,
+        summary: outfit.summary,
+        context: { destination, temperature, style }
+      });
+      alert("Outfit saved to favorites!");
+    } catch (error) {
+      console.error("Error saving favorite:", error);
+      alert("Failed to save outfit.");
     }
   };
 
@@ -173,9 +192,15 @@ export default function Outfits() {
                   </TouchableOpacity>
                 </View>
                 
-                <TouchableOpacity style={styles.scheduleButton} onPress={() => handleSchedule(outfit)}>
-                  <Text style={styles.scheduleButtonText}>Schedule</Text>
-                </TouchableOpacity>
+                <View style={{flexDirection: 'row', gap: 10}}>
+                  <TouchableOpacity style={[styles.scheduleButton, {backgroundColor: '#34C759'}]} onPress={() => handleSave(outfit)}>
+                    <Text style={styles.scheduleButtonText}>Save</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity style={styles.scheduleButton} onPress={() => handleSchedule(outfit)}>
+                    <Text style={styles.scheduleButtonText}>Schedule</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           ))}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { HashRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { verifyEmail } from './services/firebase';
 import { useSwipeable } from 'react-swipeable';
 import { FaUserCircle } from 'react-icons/fa';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -98,8 +99,25 @@ function AppContent() {
     return <Login />;
   }
 
+  const handleVerify = async () => {
+    try {
+      await verifyEmail(currentUser);
+      alert("Verification email sent! Please check your inbox.");
+    } catch (e) {
+      alert("Error sending email: " + e.message);
+    }
+  };
+
   return (
     <View style={styles.container}>
+      {currentUser && !currentUser.emailVerified && (
+        <View style={{ backgroundColor: '#FFD700', padding: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}>
+          <Text style={{ marginRight: 10, fontSize: 12 }}>Verify email for full access.</Text>
+          <TouchableOpacity onPress={handleVerify}>
+            <Text style={{ fontWeight: 'bold', textDecorationLine: 'underline', fontSize: 12 }}>Resend</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
           <Image 

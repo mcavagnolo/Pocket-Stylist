@@ -73,8 +73,8 @@ export default function Schedule() {
         style: criteria.style
       });
       
-      if (result && result.outfits) {
-        setSuggestions(result.outfits);
+      if (Array.isArray(result)) {
+        setSuggestions(result);
       }
     } catch (error) {
       console.error("Generation failed", error);
@@ -85,7 +85,7 @@ export default function Schedule() {
   };
 
   const handleSelectOutfit = (outfit) => {
-    addToSchedule(selectedDate, outfit.itemIds);
+    addToSchedule(selectedDate, outfit.items);
     setModalVisible(false);
   };
 
@@ -198,7 +198,7 @@ export default function Schedule() {
               >
                 <Text style={styles.suggestionSummary}>{outfit.reason || outfit.summary}</Text>
                 <ScrollView horizontal>
-                  {outfit.itemIds.map(id => {
+                  {outfit.items && outfit.items.map(id => {
                     const item = getItemDetails(id);
                     if (!item) return null;
                     return (
