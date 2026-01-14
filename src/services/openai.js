@@ -1,210 +1,46 @@
-import OpenAI from 'openai';
-import { getDoc, doc } from 'firebase/firestore';
-import { getDb } from './firebase';
-
-// Helper to fetch global key from Firestore if needed
-async function getGlobalApiKey() {
-  try {
-    const docRef = doc(getDb(), 'settings', 'global');
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data().openai_api_key;
-    }
-  } catch (e) {
-    console.log("Could not fetch global key", e);
-  }
-  return null;
-}
-
-const getApiKey = async () => {
-  // 1. Check environment variable (Secure backend storage for build)
-  if (import.meta.env.VITE_OPENAI_API_KEY) return import.meta.env.VITE_OPENAI_API_KEY;
-  
-  // 2. Check local storage (User provided)
-  const localKey = localStorage.getItem('openai_api_key');
-  if (localKey) return localKey;
-
-  // 3. Fallback to Firestore (Backend storage for runtime)
-  return await getGlobalApiKey();
-};
-
-const getClient = async () => {
-  const apiKey = await getApiKey();
-  if (!apiKey) {
-    throw new Error("OpenAI API Key not found. Please add it in the Account settings or contact admin.");
-  }
-  return new OpenAI({
-    apiKey: apiKey,
-    dangerouslyAllowBrowser: true 
-  });
-};
+import { functions, httpsCallable } from './firebase';
 
 /**
- * Analyzes an image of a clothing item to extract metadata.
- * @param {string} base64Image - The base64 encoded image string (data:image/jpeg;base64,...)
- * @returns {Promise<Object>} - The extracted metadata (type, color, style, tags)
+ * Analyzes an image of a clothing item to extract metadata via Cloud Function.
+ * @param {string} base64Image - The base64 encoded image string
+ * @returns {Promise<Object>} - The extracted metadata
  */
 export async function analyzeClothingItem(base64Image) {
   try {
-    const openai = await getClient();
-
-    // Helper function to run a single analysis
-    const runAnalysis = async () => {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Analyze this clothing item. Return a JSON object with the following fields: 'type' (e.g., shirt, pants, dress), 'color' (primary color), 'style' (e.g., casual, formal, sporty), 'tags' (array of 3-5 descriptive keywords), 'refreshCycle' (number of days before re-wearing), and 'boundingBox' (an array of 4 numbers [ymin, xmin, ymax, xmax] between 0 and 1 representing the tight bounding box of the item)." },
-              {
-                type: "image_url",
-                image_url: {
-                  "url": base64Image,
-                },
-              },
-            ],
-          },
-        ],
-        response_format: { type: "json_object" },
-      });
-      return JSON.parse(response.choices[0].message.content);
-    };
-
-    // Run 3 analyses in parallel for consensus
-    const results = await Promise.all([runAnalysis(), runAnalysis(), runAnalysis()]);
-
-    // Helper to find the most frequent value (mode)
-    const getMode = (arr) => {
-      const counts = {};
-      let maxCount = 0;
-      let mode = arr[0];
-      for (const item of arr) {
-        const key = String(item).toLowerCase().trim();
-        counts[key] = (counts[key] || 0) + 1;
-        if (counts[key] > maxCount) {
-          maxCount = counts[key];
-          mode = item;
-        }
-      }
-      return mode;
-    };
-
-    // Calculate consensus for single-value fields
-    const type = getMode(results.map(r => r.type));
-    const color = getMode(results.map(r => r.color));
-    const style = getMode(results.map(r => r.style));
-    const refreshCycle = parseInt(getMode(results.map(r => r.refreshCycle)));
-
-    // Calculate consensus for bounding box (average)
-    const validBoxes = results
-        .map(r => r.boundingBox)
-        .filter(b => Array.isArray(b) && b.length === 4);
+    const analyzeFunction = httpsCallable(functions, 'analyzeClothingItem');
+    const result = await analyzeFunction({ base64Image });
     
-    let boundingBox = null;
-    if (validBoxes.length > 0) {
-        const avgBox = [0, 0, 0, 0];
-        validBoxes.forEach(box => {
-            avgBox[0] += box[0];
-            avgBox[1] += box[1];
-            avgBox[2] += box[2];
-            avgBox[3] += box[3];
-        });
-        boundingBox = avgBox.map(v => v / validBoxes.length);
-    }
-
-    // Calculate consensus for tags (must appear in at least 2 results)
-    const allTags = results.flatMap(r => r.tags || []);
-    const tagCounts = {};
-    allTags.forEach(tag => {
-      const key = tag.toLowerCase().trim();
-      tagCounts[key] = (tagCounts[key] || 0) + 1;
-    });
-
-    let consensusTags = Object.keys(tagCounts).filter(key => tagCounts[key] >= 2);
-    
-    // Fallback: if no tags meet consensus, use tags from the first result
-    if (consensusTags.length === 0) {
-      consensusTags = results[0].tags || [];
-    }
-
-    return {
-      type,
-      color,
-      style,
-      tags: consensusTags,
-      refreshCycle,
-      boundingBox
-    };
-
+    // The result.data contains the return value from the cloud function
+    return result.data;
   } catch (error) {
-    console.error("Error analyzing image:", error);
-    // Return mock data if API fails or key is missing
+    console.error("Error analyzing image via Cloud Function:", error);
+    // Return safe fallback to prevent UI crash
     return {
       type: "unknown",
       color: "unknown",
       style: "unknown",
       tags: ["manual-entry"],
-      refreshCycle: 7
+      refreshCycle: 7,
+      boundingBox: null
     };
   }
 }
 
 /**
- * Generates outfit suggestions based on available items and criteria.
+ * Generates outfit suggestions based on available items and criteria via Cloud Function.
  * @param {Array} availableItems - List of available clothing items
  * @param {Object} criteria - User criteria (destination, temperature, style)
  * @returns {Promise<Array>} - Array of 3 outfit suggestions
  */
 export async function generateOutfitSuggestions(availableItems, criteria) {
   try {
-    // Filter items to reduce token count if necessary, but for now send all available
-    const itemsDescription = availableItems.map(item => ({
-      id: item.id,
-      type: item.type,
-      color: item.color,
-      tags: item.tags,
-      style: item.style,
-      rating: item.rating || 3, // Default 3/5
-      wearCount: item.wearCount || 0
-    }));
-
-    const prompt = `
-      I need 3 outfit suggestions from the following wardrobe items:
-      ${JSON.stringify(itemsDescription)}
-
-      Criteria:
-      - Destination: ${criteria.destination}
-      - Temperature: ${criteria.temperature}
-      - Style Preference: ${criteria.style}
-
-      Rules:
-      1. Prioritize items with higher 'rating'.
-      2. Consider 'wearCount' - if an item has a high rating but low wear count, suggest it more.
-      3. Ensure the outfits are appropriate for the temperature and destination.
-
-      Please select 3 distinct outfits. For each outfit, provide:
-      1. A short, catchy name (3-5 words) for the outfit (key: "name").
-      2. A short summary explaining why it fits the criteria (key: "summary").
-      3. The list of item IDs used in the outfit (key: "items").
-      
-      Return the result as a JSON object with a key "outfits" containing an array of the 3 suggestions.
-    `;
-
-    const openai = await getClient();
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: "You are a helpful fashion stylist assistant." },
-        { role: "user", content: prompt }
-      ],
-      response_format: { type: "json_object" },
-    });
-
-    const result = JSON.parse(response.choices[0].message.content);
-    return Array.isArray(result?.outfits) ? result.outfits : [];
+    const generateFunction = httpsCallable(functions, 'generateOutfitSuggestions');
+    const result = await generateFunction({ availableItems, criteria });
+    
+    // The result.data is the array of outfits
+    return result.data || [];
   } catch (error) {
-    console.error("Error generating outfits:", error);
+    console.error("Error generating outfits via Cloud Function:", error);
     return [];
   }
 }

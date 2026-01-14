@@ -17,6 +17,7 @@ import {
   sendEmailVerification
 } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -30,6 +31,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
+
+// Initialize Cloud Functions
+import { getFunctions, httpsCallable } from 'firebase/functions';
+export const functions = getFunctions(app);
+export { httpsCallable }; 
 
 let dbInstance = null;
 
