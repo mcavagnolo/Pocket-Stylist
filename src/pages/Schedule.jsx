@@ -169,12 +169,12 @@ export default function Schedule() {
 
       <Modal visible={modalVisible} animationType="slide" onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Plan for {selectedDate}</Text>
+          <Text style={styles.modalTitle}>
+            Plan for {selectedDate ? new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) : ''}
+          </Text>
           
           <View style={styles.tabContainer}>
             <TouchableOpacity 
-            Plan for {selectedDate ? new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) : ''}
-          
                 style={[styles.tab, activeTab === 'generate' && styles.activeTab]} 
                 onPress={() => setActiveTab('generate')}
             >
