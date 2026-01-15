@@ -54,10 +54,14 @@ export default function Schedule() {
 
   const getNext7Days = () => {
     const days = [];
+    const today = new Date();
     for (let i = 0; i < 7; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() + i);
-        days.push(date.toISOString().split('T')[0]);
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        days.push(`${year}-${month}-${day}`);
     }
     return days;
   }; 
@@ -67,7 +71,32 @@ export default function Schedule() {
   const openModal = (date) => {
     setSelectedDate(date);
     setSuggestions([]);
-    setCriteria({ destination: '', style: '', temperature: '' });
+    
+    let tempStr = '';
+    let autoOuterwear = false;
+
+    if (weather && weather[date]) {
+        const day = weather[date];
+        const avg = (day.max + day.min) / 2;
+        if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(day.code)) {
+            tempStr = 'Rainy';
+        } else if (avg >= 80) tempStr = 'Hot';
+        else if (avg >= 70) tempStr = 'Warm';
+        else if (avg >= 60) tempStr = 'Mild';
+        else if (avg >= 50) tempStr = 'Cool';
+        else tempStr = 'Cold';
+        
+        if (['Cool', 'Cold', 'Rainy'].includes(tempStr)) {
+            autoOuterwear = true;
+        }
+    }
+
+    setCriteria({ 
+        destination: '', 
+        style: '', 
+        temperature: tempStr,
+        includeOuterwear: autoOuterwear
+    });
     setActiveTab('generate');
     setModalVisible(true);
   };
@@ -75,16 +104,9 @@ export default function Schedule() {
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      const dateWeather = weather[selectedDate];
-      const tempStr = dateWeather ? `${dateWeather.max}°F / ${dateWeather.min}°F` : "Unknown";
-      
       const availableItems = items.filter(isItemAvailable);
       
-      const result = await generateOutfitSuggestions(availableItems, {
-        destination: criteria.destination,
-        temperature: criteria.temperature || tempStr,
-        style: criteria.style
-      });
+      const result = await generateOutfitSuggestions(availableItems, criteria);
       
       if (Array.isArray(result)) {
         setSuggestions(result);

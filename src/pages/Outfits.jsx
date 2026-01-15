@@ -30,7 +30,13 @@ export default function Outfits() {
 
       const setTempFromForecast = (forecast) => {
         if (!forecast) return;
-        const today = new Date().toISOString().split('T')[0];
+        // Fix: Use local date instead of UTC to match Open-Meteo days and user's reality
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const dayNum = String(d.getDate()).padStart(2, '0');
+        const today = `${year}-${month}-${dayNum}`;
+
         const day = forecast[today];
         if (day) {
            const avg = (day.max + day.min) / 2;
