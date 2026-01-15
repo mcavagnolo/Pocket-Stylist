@@ -4,7 +4,7 @@ import { HashRouter as Router, Routes, Route, useNavigate, useLocation } from 'r
 import { useAuth } from './context/AuthContext';
 import { FaUserCircle } from 'react-icons/fa';
 import { AnimatePresence, motion } from 'framer-motion';
-import banner from './assets/banner.png';
+import logo from './assets/logo.png';
 import { theme } from './theme';
 
 import Home from './pages/Home';
@@ -83,8 +83,8 @@ function AppContent() {
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
           <Image 
-            source={{ uri: banner }} 
-            style={{ width: 260, height: 52, resizeMode: 'contain', marginLeft: 10 }} 
+            source={{ uri: logo }} 
+            style={{ width: 180, height: 52, resizeMode: 'contain', marginLeft: 10 }} 
           />
         </View>
         <TouchableOpacity onPress={() => setShowAccount(true)}>

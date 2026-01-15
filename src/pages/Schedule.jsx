@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, Act
 import { useCloset } from '../context/ClosetContext';
 import { getWeatherForecast, getWeatherDescription, getLocationName } from '../services/weather';
 import { generateOutfitSuggestions } from '../services/openai';
-import { FaTrash } from 'react-icons/fa';
+import { saveOutfitPreference } from '../services/db';
+import { FaTrash, FaThumbsUp, FaThumbsDown } from 'react-icons/fa';
 import { OCCASIONS, STYLES, TEMPS } from '../data/constants';
 
 export default function Schedule() {
@@ -14,6 +15,7 @@ export default function Schedule() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
+  const [ratedOutfits, setRatedOutfits] = useState({});
   const [criteria, setCriteria] = useState({ destination: '', style: '', temperature: '' });
   const [activeTab, setActiveTab] = useState('generate');
 
@@ -40,6 +42,15 @@ export default function Schedule() {
     };
     fetchWeather();
   }, []);
+
+  const handlePreference = async (outfit, type) => {
+    // Optimistic update
+    setRatedOutfits(prev => ({
+        ...prev,
+        [outfit.name]: type // Use name or summary as key if ID not guaranteed
+    }));
+    await saveOutfitPreference(outfit, type);
+  };
 
   const getNext7Days = () => {
     const days = [];
@@ -253,18 +264,34 @@ export default function Schedule() {
                             const item = getItemDetails(id);
                             if (!item) return null;
                             return (
-                            <Image 
-                                key={id} 
-                                source={{ uri: item.imageUri || item.image }} 
-                                style={styles.smallImage} 
-                            />
-                            );
-                        })}
-                        </ScrollView>
-                        <View style={{flexDirection: 'row', justifyContent: 'space-between', marginTop: 10}}>
-                            <TouchableOpacity 
-                                style={[styles.selectButton, { flex: 1, marginRight: 5 }]}
-                                onPress={() => handleSelectOutfit(outfit.items)}
+                            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                                <TouchableOpacity 
+                                    style={[styles.iconButton, ratedOutfits[outfit.name] === 'like' && styles.activeIcon]}
+                                    onPress={() => handlePreference(outfit, 'like')}
+                                >
+                                    <FaThumbsUp size={16} color={ratedOutfits[outfit.name] === 'like' ? '#4CAF50' : '#666'} />
+                                </TouchableOpacity>
+                                <TouchableOpacity 
+                                    style={[styles.iconButton, ratedOutfits[outfit.name] === 'dislike' && styles.activeIcon, { marginLeft: 15 }]}
+                                    onPress={() => handlePreference(outfit, 'dislike')}
+                                >
+                                    <FaThumbsDown size={16} color={ratedOutfits[outfit.name] === 'dislike' ? '#F44336' : '#666'} />
+                                </TouchableOpacity>
+                            </View>
+                            <View style={{flexDirection: 'row'}}>
+                                <TouchableOpacity 
+                                    style={[styles.selectButton, { marginRight: 5, paddingHorizontal: 15 }]}
+                                    onPress={() => handleSelectOutfit(outfit.items)}
+                                >
+                                    <Text style={styles.selectButtonText}>Select</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity 
+                                    style={[styles.outlineButton, { marginLeft: 5 }]}
+                                    onPress={() => handleSaveFavorite(outfit)}
+                                >
+                                    <Text style={styles.outlineButtonText}>Save Fav</Text>
+                                </TouchableOpacity>
+                            </View handleSelectOutfit(outfit.items)}
                             >
                                 <Text style={styles.selectButtonText}>Select</Text>
                             </TouchableOpacity>
@@ -568,5 +595,12 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: 'red',
     fontSize: 16,
+  },
+  iconButton: {
+    padding: 8,
+  },
+  activeIcon: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
   },
 });

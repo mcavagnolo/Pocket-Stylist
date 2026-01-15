@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Image, Modal } from 'react-native';
 import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
 import { useAuth } from '../context/AuthContext';
 import { generateOutfitSuggestions } from '../services/openai';
+import { getWeatherForecast } from '../services/weather';
 import { saveOutfitPreference, saveFavoriteOutfit } from '../services/db';
 import { OCCASIONS, STYLES, TEMPS } from '../data/constants';
 
@@ -19,6 +20,47 @@ export default function Outfits() {
   const [selectedOutfit, setSelectedOutfit] = useState(null);
   const [showDateModal, setShowDateModal] = useState(false);
   const [preferences, setPreferences] = useState({});
+
+  useEffect(() => {
+    const initWeather = async () => {
+      // Default to NY if no location
+      let lat = 40.7128;
+      let lon = -74.0060;
+
+      const setTempFromForecast = (forecast) => {
+        if (!forecast) return;
+        const today = new Date().toISOString().split('T')[0];
+        const day = forecast[today];
+        if (day) {
+           const avg = (day.max + day.min) / 2;
+           if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(day.code)) {
+              setTemperature('Rainy');
+           } else if (avg >= 80) setTemperature('Hot');
+           else if (avg >= 70) setTemperature('Warm');
+           else if (avg >= 60) setTemperature('Mild');
+           else if (avg >= 50) setTemperature('Cool');
+           else setTemperature('Cold');
+        }
+      };
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const forecast = await getWeatherForecast(position.coords.latitude, position.coords.longitude);
+                setTempFromForecast(forecast);
+            },
+            async () => {
+                const forecast = await getWeatherForecast(lat, lon);
+                setTempFromForecast(forecast);
+            }
+        );
+      } else {
+         const forecast = await getWeatherForecast(lat, lon);
+         setTempFromForecast(forecast);
+      }
+    };
+    initWeather();
+  }, []);
 
   const getNext7Days = () => {
     const days = [];
@@ -130,7 +172,7 @@ export default function Outfits() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Virtual Dressing Room</Text>
+      <Text style={styles.title}>Dressing Room</Text>
 
       <View style={styles.form}>
         <Text style={styles.label}>Destination / Occasion</Text>

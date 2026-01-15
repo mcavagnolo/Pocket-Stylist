@@ -1,7 +1,7 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity, Modal, ScrollView, Platform } from 'react-native';
 import { useNavigate } from 'react-router-dom';
-import { FaFilter, FaTimes } from 'react-icons/fa';
+import { FaFilter, FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { useCloset } from '../context/ClosetContext';
 import { addItemToDb, getUserItems } from '../services/db';
 import { useAuth } from '../context/AuthContext';
@@ -47,8 +47,8 @@ const SmartImage = ({ uri, style, alt }) => {
 };
 
 const ClosetItem = React.memo(({ item, onPress, isAvailable }) => (
-  <TouchableOpacity onPress={() => onPress(item)}>
-    <View style={[styles.itemContainer, !isAvailable && styles.unavailableItem]}>
+  <TouchableOpacity onPress={() => onPress(item)} style={{ width: '48%', marginBottom: 15 }}>
+    <View style={[styles.itemContainer, !isAvailable && styles.unavailableItem, { width: '100%' }]}>
       <SmartImage 
         uri={item.imageUri || item.image} 
         style={styles.image} 
@@ -62,6 +62,8 @@ const ClosetItem = React.memo(({ item, onPress, isAvailable }) => (
   </TouchableOpacity>
 ));
 
+const CATEGORY_ORDER = ['Outerwear', 'Tops', 'Bottoms', 'Shoes', 'Socks', 'Accessories', 'Other'];
+
 export default function Closet() {
   const { items, isItemAvailable, deleteItem, updateItem } = useCloset();
   const { currentUser } = useAuth();
@@ -70,6 +72,7 @@ export default function Closet() {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [expandedSections, setExpandedSections] = useState({});
   const [activeFilters, setActiveFilters] = useState({
     type: [],
     tags: []
@@ -78,23 +81,36 @@ export default function Closet() {
   const cameraInputRef = useRef(null);
   const libraryInputRef = useRef(null);
 
-  const uniqueTypes = useMemo(() => {
-    const types = new Set(items.map(item => item.type).filter(Boolean));
-    return Array.from(types).sort();
-  }, [items]);
+  const categorizedItems = useMemo(() => {
+    const groups = {};
+    CATEGORY_ORDER.forEach(c => groups[c] = []);
 
-  const uniqueTags = useMemo(() => {
-    const tags = new Set(items.flatMap(item => item.tags || []));
-    return Array.from(tags).sort();
-  }, [items]);
-
-  const filteredItems = useMemo(() => {
-    return items.filter(item => {
+    items.forEach(item => {
+      // Apply filters first
       const typeMatch = activeFilters.type.length === 0 || activeFilters.type.includes(item.type);
       const tagMatch = activeFilters.tags.length === 0 || (item.tags && item.tags.some(tag => activeFilters.tags.includes(tag)));
-      return typeMatch && tagMatch;
+      
+      if (!typeMatch || !tagMatch) return;
+
+      const type = (item.type || '').toLowerCase();
+      let key = 'Other';
+
+      // Categorization Logic
+      if (['jacket', 'coat', 'blazer', 'cardigan', 'vest', 'outerwear'].some(t => type.includes(t))) key = 'Outerwear';
+      else if (['shirt', 'blouse', 'top', 'tee', 'tank', 'sweater', 'hoodie', 'sweatshirt'].some(t => type.includes(t))) key = 'Tops';
+      else if (['pant', 'jean', 'short', 'skirt', 'legging', 'trousers', 'bottom'].some(t => type.includes(t))) key = 'Bottoms';
+      else if (['shoe', 'sneaker', 'boot', 'sandal', 'heel', 'flat', 'loafer'].some(t => type.includes(t))) key = 'Shoes';
+      else if (['sock', 'stocking'].some(t => type.includes(t))) key = 'Socks';
+      else if (['hat', 'scarf', 'belt', 'bag', 'purse', 'jewelry', 'glasses', 'watch'].some(t => type.includes(t))) key = 'Accessories';
+      
+      groups[key].push(item);
     });
+    return groups;
   }, [items, activeFilters]);
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
 
   const toggleFilter = (category, value) => {
     setActiveFilters(prev => {
@@ -156,7 +172,7 @@ export default function Closet() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Virtual Closet</Text>
+        <Text style={styles.title}>Your Closet</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity 
             style={styles.filterButton} 
@@ -189,19 +205,45 @@ export default function Closet() {
         />
       </View>
       
-      <FlatList
-        data={filteredItems}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        numColumns={numColumns}
-        style={{ flex: 1 }}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.listContent}>
+        {CATEGORY_ORDER.map(section => {
+          const sectionItems = categorizedItems[section] || [];
+          if (sectionItems.length === 0) return null;
+
+          const isExpanded = expandedSections[section];
+
+          return (
+            <View key={section} style={styles.sectionContainer}>
+              <TouchableOpacity 
+                style={styles.sectionHeader} 
+                onPress={() => toggleSection(section)}
+              >
+                <Text style={styles.sectionTitle}>{section} ({sectionItems.length})</Text>
+                {isExpanded ? <FaChevronUp /> : <FaChevronDown />}
+              </TouchableOpacity>
+              
+              {isExpanded && (
+                <View style={styles.gridContainer}>
+                  {sectionItems.map(item => (
+                    <ClosetItem 
+                      key={item.id}
+                      item={item} 
+                      onPress={handleItemPress} 
+                      isAvailable={isItemAvailable(item)} 
+                    />
+                  ))}
+                </View>
+              )}
+            </View>
+          );
+        })}
+        
+        {Object.values(categorizedItems).flat().length === 0 && (
+           <Text style={styles.emptyText}>
             {items.length === 0 ? "No items in closet. Add some!" : "No items match your filters."}
           </Text>
-        }
-      />
+        )}
+      </ScrollView>
 
       {/* Filter Modal */}
       <Modal
@@ -382,6 +424,32 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 10,
     backgroundColor: '#fff',
+  },
+  sectionContainer: {
+    marginBottom: 10,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#eee',
+    overflow: 'hidden',
+  },
+  sectionHeader: {
+    padding: 15,
+    backgroundColor: '#f8f9fa',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    padding: 10,
   },
   header: {
     flexDirection: 'row',
