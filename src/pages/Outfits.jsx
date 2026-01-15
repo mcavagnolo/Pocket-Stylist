@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
 import { useAuth } from '../context/AuthContext';
 import { generateOutfitSuggestions } from '../services/openai';
-import { getWeatherForecast } from '../services/weather';
+import { getWeatherForecast, getLocationName, getWeatherDescription } from '../services/weather';
 import { saveOutfitPreference, saveFavoriteOutfit } from '../services/db';
 import { OCCASIONS, STYLES, TEMPS } from '../data/constants';
 
@@ -14,6 +14,9 @@ export default function Outfits() {
   const navigate = useNavigate();
   const [destination, setDestination] = useState('');
   const [temperature, setTemperature] = useState('');
+  const [locationName, setLocationName] = useState('');
+  const [currentWeatherDesc, setCurrentWeatherDesc] = useState('');
+  const [currentTempRange, setCurrentTempRange] = useState('');
   const [style, setStyle] = useState('');
   const [includeOuterwear, setIncludeOuterwear] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -28,8 +31,9 @@ export default function Outfits() {
       let lat = 40.7128;
       let lon = -74.0060;
 
-      const setTempFromForecast = (forecast) => {
+      const setTempFromForecast = async (forecast, lat, lon) => {
         if (!forecast) return;
+        
         // Fix: Use local date instead of UTC to match Open-Meteo days and user's reality
         const d = new Date();
         const year = d.getFullYear();
@@ -51,26 +55,32 @@ export default function Outfits() {
            else tempStr = 'Cold';
            
            setTemperature(tempStr);
+           setCurrentTempRange(`${day.max}° / ${day.min}°`);
+           setCurrentWeatherDesc(getWeatherDescription(day.code));
+           
            if (['Cool', 'Cold', 'Rainy'].includes(tempStr)) {
              setIncludeOuterwear(true);
            }
         }
+        
+        const locName = await getLocationName(lat, lon);
+        if (locName) setLocationName(locName);
       };
 
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const forecast = await getWeatherForecast(position.coords.latitude, position.coords.longitude);
-                setTempFromForecast(forecast);
+                await setTempFromForecast(forecast, position.coords.latitude, position.coords.longitude);
             },
             async () => {
                 const forecast = await getWeatherForecast(lat, lon);
-                setTempFromForecast(forecast);
+                await setTempFromForecast(forecast, lat, lon);
             }
         );
       } else {
          const forecast = await getWeatherForecast(lat, lon);
-         setTempFromForecast(forecast);
+         await setTempFromForecast(forecast, lat, lon);
       }
     };
     initWeather();
@@ -175,7 +185,7 @@ export default function Outfits() {
       if (schedule && schedule[date]) {
          if (!window.confirm("This date already has an outfit. Overwrite?")) return;
       }
-      addToSchedule(date, selectedOutfit.items);
+      addToSchedule(date, selectedOutfit.items, selectedOutfit.name);
       setShowDateModal(false);
       setSelectedOutfit(null);
       alert("Outfit scheduled!");
@@ -187,7 +197,17 @@ export default function Outfits() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Dressing Room</Text>
+      <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10}}>
+         <Text style={styles.title}>Dressing Room</Text>
+         {locationName && (
+             <View style={{alignItems: 'flex-end'}}>
+                 <Text style={{fontSize: 14, fontWeight: 'bold', color: '#555'}}>📍 {locationName}</Text>
+                 {currentTempRange && (
+                     <Text style={{fontSize: 12, color: '#777'}}>{currentTempRange} • {currentWeatherDesc}</Text>
+                 )}
+             </View>
+         )}
+      </View>
 
       <View style={styles.form}>
         <Text style={styles.label}>Destination / Occasion</Text>

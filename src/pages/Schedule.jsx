@@ -119,8 +119,8 @@ export default function Schedule() {
     }
   };
 
-  const handleSelectOutfit = (outfitItems) => {
-    addToSchedule(selectedDate, outfitItems);
+  const handleSelectOutfit = (outfit) => {
+    addToSchedule(selectedDate, outfit.items, outfit.name);
     setModalVisible(false);
   };
 
@@ -174,9 +174,13 @@ export default function Schedule() {
             </View>
 
             {outfitItemIds ? (
-              <View style={styles.outfitContainer}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.itemsRow}>
-                  {outfitItemIds.map((itemId, idx) => {
+              <View>
+                {scheduleEntry.name && (
+                    <Text style={styles.outfitTitle}>{scheduleEntry.name}</Text>
+                )}
+                <View style={styles.outfitContainer}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.itemsRow}>
+                    {outfitItemIds.map((itemId, idx) => {
                     const item = getItemDetails(itemId);
                     if (!item) return null;
                     return (
@@ -191,6 +195,7 @@ export default function Schedule() {
                     <FaTrash size={16} color="#FF6B6B" />
                 </TouchableOpacity>
               </View>
+             </View>
             ) : (
                 <TouchableOpacity style={styles.addButton} onPress={() => openModal(date)}>
                   <Text style={styles.addButtonText}>Add Outfit</Text>
@@ -323,7 +328,7 @@ export default function Schedule() {
                             <View style={{flexDirection: 'row'}}>
                                 <TouchableOpacity 
                                     style={[styles.selectButton, { marginRight: 5, paddingHorizontal: 15 }]}
-                                    onPress={() => handleSelectOutfit(outfit.items)}
+                                    onPress={() => handleSelectOutfit(outfit)}
                                 >
                                     <Text style={styles.selectButtonText}>Select</Text>
                                 </TouchableOpacity>
@@ -344,7 +349,7 @@ export default function Schedule() {
                         <Text style={styles.emptyText}>No favorites saved yet.</Text>
                     ) : (
                         favorites.map((fav) => (
-                            <TouchableOpacity key={fav.id} style={styles.favCard} onPress={() => handleSelectOutfit(fav.items)}>
+                            <TouchableOpacity key={fav.id} style={styles.favCard} onPress={() => handleSelectOutfit(fav)}>
                                 <Text style={styles.favName}>{fav.name || "Untitled Outfit"}</Text>
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                     {fav.items.map(id => {
@@ -438,13 +443,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   itemImage: {
-    width: 60,
-    height: 60,
+    width: 90,
+    height: 90,
     borderRadius: 8,
     marginBottom: 5,
+    resizeMode: 'cover',
   },
   itemType: {
-    fontSize: 10,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  outfitTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#007AFF',
+    marginBottom: 8,
+    marginTop: 5,
   },
   trashButton: {
     padding: 10,
