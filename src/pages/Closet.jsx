@@ -381,7 +381,7 @@ export default function Closet() {
 
                 {selectedItem.tags && selectedItem.tags.length > 0 && (
                   <View style={styles.tagsContainer}>
-                    <Text style={styles.sectionTitle}>Tags</Text>
+                    <Text style={styles.detailSectionTitle}>Tags</Text>
                     <View style={styles.tagsList}>
                       {selectedItem.tags.map((tag, index) => (
                         <View key={index} style={styles.tagChip}>
@@ -392,7 +392,7 @@ export default function Closet() {
                   </View>
                 )}
                 
-                <Text style={styles.sectionTitle}>Rating</Text>
+                <Text style={styles.detailSectionTitle}>Rating</Text>
                 <View style={styles.ratingContainer}>
                   {[1, 2, 3, 4, 5].map(star => (
                     <TouchableOpacity key={star} onPress={() => handleRating(star)}>
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
   },
-  sectionTitle: {
+  detailSectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 20,

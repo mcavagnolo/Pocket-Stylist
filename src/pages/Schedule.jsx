@@ -264,6 +264,15 @@ export default function Schedule() {
                             const item = getItemDetails(id);
                             if (!item) return null;
                             return (
+                            <Image 
+                                key={id} 
+                                source={{ uri: item.imageUri || item.image }} 
+                                style={styles.smallImage} 
+                            />
+                            );
+                        })}
+                        </ScrollView>
+                        <View style={{flexDirection: 'row', justifyContent: 'space-between', marginTop: 10}}>
                             <View style={{flexDirection: 'row', alignItems: 'center'}}>
                                 <TouchableOpacity 
                                     style={[styles.iconButton, ratedOutfits[outfit.name] === 'like' && styles.activeIcon]}
@@ -291,16 +300,7 @@ export default function Schedule() {
                                 >
                                     <Text style={styles.outlineButtonText}>Save Fav</Text>
                                 </TouchableOpacity>
-                            </View handleSelectOutfit(outfit.items)}
-                            >
-                                <Text style={styles.selectButtonText}>Select</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={[styles.outlineButton, { flex: 1, marginLeft: 5 }]}
-                                onPress={() => handleSaveFavorite(outfit)}
-                            >
-                                <Text style={styles.outlineButtonText}>Save Fav</Text>
-                            </TouchableOpacity>
+                            </View>
                         </View>
                     </View>
                     ))}
