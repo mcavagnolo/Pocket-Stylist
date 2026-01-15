@@ -81,6 +81,15 @@ export default function Closet() {
   const cameraInputRef = useRef(null);
   const libraryInputRef = useRef(null);
 
+  const uniqueTypes = useMemo(() => {
+    return [...new Set(items.map(item => item.type).filter(Boolean))].sort();
+  }, [items]);
+
+  const uniqueTags = useMemo(() => {
+    const tags = items.flatMap(item => item.tags || []);
+    return [...new Set(tags.filter(Boolean))].sort();
+  }, [items]);
+
   const categorizedItems = useMemo(() => {
     const groups = {};
     CATEGORY_ORDER.forEach(c => groups[c] = []);
