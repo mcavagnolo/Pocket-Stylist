@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, Act
 import { useCloset } from '../context/ClosetContext';
 import { getWeatherForecast, getWeatherDescription, getLocationName } from '../services/weather';
 import { generateOutfitSuggestions } from '../services/openai';
-import { saveOutfitPreference } from '../services/db';
-import { FaTrash, FaThumbsUp, FaThumbsDown } from 'react-icons/fa';
+import { saveOutfitPreference, saveFavoriteOutfit } from '../services/db';
+import { FaTrash, FaThumbsUp, FaThumbsDown, FaHeart } from 'react-icons/fa';
 import { OCCASIONS, STYLES, TEMPS } from '../data/constants';
 
 export default function Schedule() {
@@ -101,6 +101,15 @@ export default function Schedule() {
     setModalVisible(true);
   };
 
+  const handleSaveToFavorites = async (outfitData) => {
+    try {
+        await addFavorite(outfitData);
+        alert('Outfit saved to favorites!');
+    } catch (error) {
+        console.error("Failed to save favorite:", error);
+    }
+  };
+
   const handleGenerate = async () => {
     setLoading(true);
     try {
@@ -191,9 +200,14 @@ export default function Schedule() {
                     );
                   })}
                 </ScrollView>
-                <TouchableOpacity style={styles.trashButton} onPress={() => handleRemoveOutfit(date)}>
-                    <FaTrash size={16} color="#FF6B6B" />
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'column', gap: 10 }}>
+                    <TouchableOpacity style={styles.iconButton} onPress={() => handleSaveToFavorites({ items: outfitItemIds, name: scheduleEntry.name || 'From Schedule' })}>
+                        <FaHeart size={16} color="#007AFF" /> 
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.trashButton} onPress={() => handleRemoveOutfit(date)}>
+                        <FaTrash size={16} color="#FF6B6B" />
+                    </TouchableOpacity>
+                </View>
               </View>
              </View>
             ) : (

@@ -2,7 +2,8 @@ export const getLocationName = async (lat, lon) => {
   try {
     const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
     const data = await response.json();
-    return data.city || data.locality || "Unknown Location";
+    // Prefer locality (e.g. El Segundo) over city (e.g. Los Angeles) if available
+    return data.locality || data.city || "Unknown Location";
   } catch (error) {
     console.error("Error getting location name:", error);
     return "Unknown Location";

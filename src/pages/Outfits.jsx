@@ -76,7 +76,8 @@ export default function Outfits() {
             async () => {
                 const forecast = await getWeatherForecast(lat, lon);
                 await setTempFromForecast(forecast, lat, lon);
-            }
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
         );
       } else {
          const forecast = await getWeatherForecast(lat, lon);

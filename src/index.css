@@ -8,6 +8,10 @@ body {
   background-color: #fff9ec; /* theme.colors.background */
 }
 
+input, textarea, select {
+  font-size: 16px;
+}
+
 a {
   color: #ff8e52; /* theme.colors.highlight */
   text-decoration: none;
