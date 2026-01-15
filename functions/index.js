@@ -155,6 +155,10 @@ exports.generateOutfitSuggestions = onCall({
 
 
     const { availableItems, criteria } = request.data;
+    
+    // Automatically enforce outerwear for colder temps or rain
+    const autoIncludeOuterwear = ['Cool', 'Cold', 'Rainy'].includes(criteria.temperature);
+    const shouldIncludeOuterwear = criteria.includeOuterwear || autoIncludeOuterwear;
 
     const itemsDescription = availableItems.map(item => ({
         id: item.id,
@@ -174,12 +178,12 @@ exports.generateOutfitSuggestions = onCall({
   - Destination: ${criteria.destination}
   - Temperature: ${criteria.temperature}
   - Style Preference: ${criteria.style}
-  - Include Outerwear: ${criteria.includeOuterwear ? 'YES' : 'NO'}
+  - Include Outerwear: ${shouldIncludeOuterwear ? 'YES' : 'NO'}
 
   Rules:
       1. Every outfit MUST include at least one item from EACH of these categories: 'top', 'bottom', 'shoes', 'socks' (if available in wardrobe).
       2. IMPORTANT: Sweatshirts, hoodies, and sweaters are NOT considered 'tops'. They count as 'outerwear' or 'layers'. You MUST include a shirt/t-shirt/blouse underneath if you select one of these.
-      3. Outerwear Rule: ${criteria.includeOuterwear ? "You MUST include an 'outerwear' layer (jacket, coat, hoodie, cardigan)." : "Do NOT force an outerwear layer unless the temperature is extremely cold (below 10C)."}
+      3. Outerwear Rule: ${shouldIncludeOuterwear ? "You MUST include an 'outerwear' layer (jacket, coat, hoodie, cardigan)." : "Do NOT force an outerwear layer unless the temperature is extremely cold (below 10C)."}
       4. Prioritize items with higher 'rating'.
       5. Consider 'wearCount' - if an item has a high rating but low wear count, suggest it more.
       6. Ensure the outfits are appropriate for the temperature and destination.

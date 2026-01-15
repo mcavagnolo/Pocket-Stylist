@@ -34,13 +34,20 @@ export default function Outfits() {
         const day = forecast[today];
         if (day) {
            const avg = (day.max + day.min) / 2;
+           let tempStr = '';
+
            if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(day.code)) {
-              setTemperature('Rainy');
-           } else if (avg >= 80) setTemperature('Hot');
-           else if (avg >= 70) setTemperature('Warm');
-           else if (avg >= 60) setTemperature('Mild');
-           else if (avg >= 50) setTemperature('Cool');
-           else setTemperature('Cold');
+              tempStr = 'Rainy';
+           } else if (avg >= 80) tempStr = 'Hot';
+           else if (avg >= 70) tempStr = 'Warm';
+           else if (avg >= 60) tempStr = 'Mild';
+           else if (avg >= 50) tempStr = 'Cool';
+           else tempStr = 'Cold';
+           
+           setTemperature(tempStr);
+           if (['Cool', 'Cold', 'Rainy'].includes(tempStr)) {
+             setIncludeOuterwear(true);
+           }
         }
       };
 
