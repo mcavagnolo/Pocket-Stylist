@@ -4,7 +4,7 @@ import { HashRouter as Router, Routes, Route, useNavigate, useLocation } from 'r
 import { useAuth } from './context/AuthContext';
 import { FaUserCircle } from 'react-icons/fa';
 import { AnimatePresence, motion } from 'framer-motion';
-import logo from './assets/logo.png';
+import logo from './assets/PSBannerlogolong2.png';
 import { theme } from './theme';
 
 import Home from './pages/Home';
