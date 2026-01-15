@@ -166,6 +166,7 @@ export default function Outfits() {
       await saveFavoriteOutfit(currentUser.uid, {
         items: outfit.items,
         name: outfit.name, // Save the new generated title
+        outfitId: outfit.id || crypto.randomUUID(),
         summary: outfit.summary,
         context: { destination, temperature, style }
       });
@@ -186,7 +187,7 @@ export default function Outfits() {
       if (schedule && schedule[date]) {
          if (!window.confirm("This date already has an outfit. Overwrite?")) return;
       }
-      addToSchedule(date, selectedOutfit.items, selectedOutfit.name);
+      addToSchedule(date, selectedOutfit.items, selectedOutfit.name, selectedOutfit.id);
       setShowDateModal(false);
       setSelectedOutfit(null);
       alert("Outfit scheduled!");

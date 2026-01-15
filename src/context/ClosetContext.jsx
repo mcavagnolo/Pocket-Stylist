@@ -122,11 +122,11 @@ export function ClosetProvider({ children }) {
   };
 
   // Schedule functions
-  const addToSchedule = async (date, items, name = '') => {
+  const addToSchedule = async (date, items, name = '', outfitId = null) => {
     if (!currentUser) return;
     
-    // Structure: { date: "2024-01-01", items: ["id1", "id2"], name: "Cool Outfit" }
-    const scheduleEntry = { date, items, name };
+    // Structure: { date: "2024-01-01", items: ["id1", "id2"], name: "Cool Outfit", outfitId: "uuid" }
+    const scheduleEntry = { date, items, name, outfitId: outfitId || crypto.randomUUID() };
     
     setSchedule(prev => ({
       ...prev,
@@ -134,7 +134,7 @@ export function ClosetProvider({ children }) {
     }));
 
     try {
-      await saveScheduleToDb(currentUser.uid, date, { items, name });
+      await saveScheduleToDb(currentUser.uid, date, { items, name, outfitId: scheduleEntry.outfitId });
     } catch (error) {
       console.error("Error saving schedule:", error);
     }

@@ -4,7 +4,7 @@ import { useCloset } from '../context/ClosetContext';
 import { getWeatherForecast, getWeatherDescription, getLocationName } from '../services/weather';
 import { generateOutfitSuggestions } from '../services/openai';
 import { saveOutfitPreference, saveFavoriteOutfit } from '../services/db';
-import { FaTrash, FaThumbsUp, FaThumbsDown, FaHeart } from 'react-icons/fa';
+import { FaTrash, FaThumbsUp, FaThumbsDown, FaHeart, FaRegHeart } from 'react-icons/fa';
 import { OCCASIONS, STYLES, TEMPS } from '../data/constants';
 
 export default function Schedule() {
@@ -104,10 +104,27 @@ export default function Schedule() {
   const handleSaveToFavorites = async (outfitData) => {
     try {
         await addFavorite(outfitData);
-        alert('Outfit saved to favorites!');
     } catch (error) {
         console.error("Failed to save favorite:", error);
     }
+  };
+
+  // Helper to check if an outfit is already favorited
+  const isFavorited = (scheduleEntry) => {
+     if (!favorites || favorites.length === 0) return false;
+     // Check by outfitId if available
+     if (scheduleEntry.outfitId) {
+         return favorites.some(fav => fav.outfitId === scheduleEntry.outfitId);
+     }
+     // Fallback: check by exact match of item IDs
+     if (scheduleEntry.items) {
+         const entryIds = [...scheduleEntry.items].sort().join(',');
+         return favorites.some(fav => {
+             const favIds = [...fav.items].sort().join(',');
+             return favIds === entryIds;
+         });
+     }
+     return false;
   };
 
   const handleGenerate = async () => {
@@ -188,7 +205,7 @@ export default function Schedule() {
                     <Text style={styles.outfitTitle}>{scheduleEntry.name}</Text>
                 )}
                 <View style={styles.outfitContainer}>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.itemsRow}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.itemsRow}>
                     {outfitItemIds.map((itemId, idx) => {
                     const item = getItemDetails(itemId);
                     if (!item) return null;
@@ -201,8 +218,12 @@ export default function Schedule() {
                   })}
                 </ScrollView>
                 <View style={{ flexDirection: 'column', gap: 10 }}>
-                    <TouchableOpacity style={styles.iconButton} onPress={() => handleSaveToFavorites({ items: outfitItemIds, name: scheduleEntry.name || 'From Schedule' })}>
-                        <FaHeart size={16} color="#007AFF" /> 
+                    <TouchableOpacity style={styles.iconButton} onPress={() => handleSaveToFavorites({ items: outfitItemIds, name: scheduleEntry.name || 'From Schedule', outfitId: scheduleEntry.outfitId })}>
+                        {isFavorited(scheduleEntry) ? (
+                            <FaHeart size={16} color="#FF4444" />
+                        ) : (
+                            <FaRegHeart size={16} color="#FF4444" />
+                        )}
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.trashButton} onPress={() => handleRemoveOutfit(date)}>
                         <FaTrash size={16} color="#FF6B6B" />

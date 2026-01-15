@@ -38,7 +38,13 @@ export async function generateOutfitSuggestions(availableItems, criteria) {
     const result = await generateFunction({ availableItems, criteria });
     
     // The result.data is the array of outfits
-    return result.data || [];
+    const suggestions = result.data || [];
+    
+    // Assign unique IDs to each suggestion
+    return suggestions.map(outfit => ({
+        ...outfit,
+        id: crypto.randomUUID()
+    }));
   } catch (error) {
     console.error("Error generating outfits via Cloud Function:", error);
     return [];
