@@ -15,6 +15,7 @@ export default function Outfits() {
   const [destination, setDestination] = useState('');
   const [temperature, setTemperature] = useState('');
   const [style, setStyle] = useState('');
+  const [includeOuterwear, setIncludeOuterwear] = useState(false);
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [selectedOutfit, setSelectedOutfit] = useState(null);
@@ -88,7 +89,8 @@ export default function Outfits() {
       const results = await generateOutfitSuggestions(availableItems, {
         destination,
         temperature,
-        style
+        style,
+        includeOuterwear
       });
       setSuggestions(results);
     } catch (error) {
@@ -214,6 +216,17 @@ export default function Outfits() {
             ))}
         </View>
 
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
+          <TouchableOpacity 
+            style={[styles.chip, includeOuterwear && styles.activeChip]}
+            onPress={() => setIncludeOuterwear(!includeOuterwear)}
+          >
+            <Text style={[styles.chipText, includeOuterwear && styles.activeChipText]}>
+              {includeOuterwear ? 'Include Outerwear ✓' : 'Add Outerwear Layer'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
 
         <TouchableOpacity 
           style={[styles.button, loading && styles.disabledButton]} 
@@ -324,16 +337,14 @@ const styles = StyleSheet.create({
   chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 4,
     marginBottom: 8,
   },
   chip: {
     backgroundColor: '#f0f0f0',
-    paddingVertical: 8,
-    marginBottom: 0, 
-    paddingHorizontal: 15,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 20,
-    marginRight: 10,
     borderWidth: 1,
     borderColor: '#eee',
   },

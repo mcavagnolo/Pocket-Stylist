@@ -16,7 +16,7 @@ export default function Schedule() {
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [ratedOutfits, setRatedOutfits] = useState({});
-  const [criteria, setCriteria] = useState({ destination: '', style: '', temperature: '' });
+  const [criteria, setCriteria] = useState({ destination: '', style: '', temperature: '', includeOuterwear: false });
   const [activeTab, setActiveTab] = useState('generate');
 
   useEffect(() => {
@@ -240,6 +240,17 @@ export default function Schedule() {
                                     <Text style={[styles.chipText, criteria.style === opt && styles.activeChipText]}>{opt}</Text>
                                 </TouchableOpacity>
                             ))}
+                        </View>
+
+                         <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
+                            <TouchableOpacity 
+                                style={[styles.chip, criteria.includeOuterwear && styles.activeChip]}
+                                onPress={() => setCriteria(prev => ({ ...prev, includeOuterwear: !prev.includeOuterwear }))}
+                            >
+                                <Text style={[styles.chipText, criteria.includeOuterwear && styles.activeChipText]}>
+                                {criteria.includeOuterwear ? 'Include Outerwear ✓' : 'Add Outerwear Layer'}
+                                </Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
 
@@ -532,13 +543,13 @@ const styles = StyleSheet.create({
   chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 4,
     marginBottom: 5,
   },
   chip: {
     backgroundColor: '#f0f0f0',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#eee',
