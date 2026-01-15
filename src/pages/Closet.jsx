@@ -319,7 +319,7 @@ export default function Closet() {
                 style={styles.applyButton} 
                 onPress={() => setFilterModalVisible(false)}
               >
-                <Text style={styles.applyButtonText}>Show {filteredItems.length} Items</Text>
+                <Text style={styles.applyButtonText}>Show {Object.values(categorizedItems).reduce((a, b) => a + b.length, 0)} Items</Text>
               </TouchableOpacity>
             </View>
           </View>
