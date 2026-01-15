@@ -170,7 +170,11 @@ export default function Schedule() {
   const days = getNext7Days();
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView 
+        contentContainerStyle={styles.container} 
+        showsVerticalScrollIndicator={true}
+        persistentScrollbar={true} //- For Android, maps to nothing on web usually, but good practice
+    >
       <View style={styles.headerRow}>
          <Text style={styles.title}>Outfit Schedule</Text>
          {locationName ? <Text style={styles.locationText}>📍 {locationName}</Text> : null}
@@ -205,7 +209,12 @@ export default function Schedule() {
                     <Text style={styles.outfitTitle}>{scheduleEntry.name}</Text>
                 )}
                 <View style={styles.outfitContainer}>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.itemsRow}>
+                  <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={true} 
+                    contentContainerStyle={{ paddingBottom: 5 }} // Ensure scrollbar space
+                    style={styles.itemsRow}
+                  >
                     {outfitItemIds.map((itemId, idx) => {
                     const item = getItemDetails(itemId);
                     if (!item) return null;

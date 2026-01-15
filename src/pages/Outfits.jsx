@@ -198,7 +198,10 @@ export default function Outfits() {
   const getItemDetails = (id) => items.find(i => i.id === id);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView 
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={true}
+    >
       <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10}}>
          <Text style={styles.title}>Dressing Room</Text>
          {locationName && (
