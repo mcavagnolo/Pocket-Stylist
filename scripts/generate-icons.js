@@ -2,7 +2,7 @@ import { Jimp } from 'jimp';
 import fs from 'fs';
 import path from 'path';
 
-const SOURCE_IMAGE = 'pics/PSLogo512.png'; // Default source
+const SOURCE_IMAGE = 'public/Stylized app logob.png'; // Updated source
 const OUTPUT_DIR = 'public';
 
 const SIZES = [
