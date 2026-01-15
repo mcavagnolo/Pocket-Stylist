@@ -212,7 +212,7 @@ export default function Schedule() {
                   <ScrollView 
                     horizontal 
                     showsHorizontalScrollIndicator={true} 
-                    contentContainerStyle={{ paddingBottom: 5 }} // Ensure scrollbar space
+                    contentContainerStyle={{ paddingBottom: 10, paddingRight: 20 }}
                     style={styles.itemsRow}
                   >
                     {outfitItemIds.map((itemId, idx) => {

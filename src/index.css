@@ -18,24 +18,31 @@ a {
 }
 
 /* Custom Scrollbar - Enforce visibility */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #FF6B6B transparent;
+}
+
 ::-webkit-scrollbar {
   -webkit-appearance: none;
-  width: 8px; /* Slightly thinner but consistent */
+  width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05); /* Slight track color */
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.3); /* Darker thumb */
+  background-color: #FF6B6B; /* Pink like trash can */
   border-radius: 4px;
+  border: 2px solid transparent; /* Creates padding effect if background-clip is used, but here simpler is better */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.5); 
+  background-color: #ff5252; 
 }
+
 
 /* Force horizontal scroll for React Native Web ScrollView wrapper if needed */
 .r-18u37iz {
