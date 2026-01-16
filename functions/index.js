@@ -237,21 +237,21 @@ exports.generateOutfitSuggestions = onCall({
   User Feedback History:${preferenceSummary || " None yet."}
 
   Rules:
-      1. Structure:
-         - Standard: Base Layer + Bottom + Shoes
-         - One-Piece: One-Piece Item + Shoes
-         - Layering: Add Middle Layer or Outer Layer based on rules below.
-      2. Layer Definitions:
-         - 'base': T-shirts, shirts, blouses, tank tops.
-         - 'middle': Sweaters, sweatshirts, hoodies, flannels, cardigans.
-         - 'outer': Jackets, coats, blazers, parkas.
-      3. Layering Logic:
-         - If 'middle' layer is used (like a hoodie), you MUST also include a 'base' layer underneath.
-         - Should Include Outerwear: ${shouldIncludeOuterwear ? "You MUST include a 'middle' OR 'outer' layer." : "Prefer only 'base' layer unless 'middle' helps the style."}
-         - If Weather is 'Cold' or 'Rainy': Prefer 'outer' layer (jacket/coat) over just a 'middle' layer.
+      1. Structure & Layers:
+         - Always Required: Bottom + Shoes + Base Layer (unless wearing a One-Piece).
+         - Optional Layers: Middle Layer, Outer Layer.
+      2. Layering Logic (Temperature Driven):
+         - You (the AI) determine the necessary layers based on the 'Temperature' provided.
+         - Hot/Warm: Base Layer only.
+         - Mild/Cool: Base + Middle OR Base + Outer.
+         - Cold: Base + Outer OR Base + Middle + Outer.
+         - Rainy: Must include an Outer layer appropriate for rain.
+      3. configuration Rules:
+         - Base Layer is ALWAYS required under a Middle or Outer layer (no naked hoodies/jackets).
+         - Middle Layer is OPTIONAL. You can have Base + Outer (e.g. T-Shirt + Jacket) without a Middle layer.
       4. Prioritize items with higher 'rating'.
       5. Consider 'wearCount' - if an item has a high rating but low wear count, suggest it more.
-      6. Ensure the outfits are appropriate for the temperature and destination.
+      6. Ensure the outfits are appropriate for the destination (e.g. don't suggest a hoodie for a formal event unless it matches the style).
 
   Please select 3 distinct outfits. For each outfit, provide:
   1. A short, catchy name (3-5 words) for the outfit (key: "name").
