@@ -51,7 +51,7 @@ exports.analyzeClothingItem = onCall({
                     {
                         role: "user",
                         content: [
-                            { type: "text", text: "Analyze this clothing item. Return a JSON object with the following fields: 'type' (e.g., shirt, pants, dress), 'color' (primary color), 'style' (e.g., casual, formal, sporty), 'tags' (array of 3-5 descriptive keywords), 'refreshCycle' (number of days before re-wearing), and 'boundingBox' (an array of 4 numbers [ymin, xmin, ymax, xmax] between 0 and 1 representing the tight bounding box of the item)." },
+                            { type: "text", text: "Analyze this clothing item. Return a JSON object with the following fields: 'type' (e.g., shirt, pants, dress), 'layer' (one of: 'base', 'middle', 'outer', 'bottom', 'shoes', 'one_piece', 'accessory'), 'color' (primary color), 'style' (e.g., casual, formal, sporty), 'tags' (array of 3-5 descriptive keywords), 'refreshCycle' (number of days before re-wearing), and 'boundingBox' (an array of 4 numbers [ymin, xmin, ymax, xmax] between 0 and 1)." },
                             {
                                 type: "image_url",
                                 image_url: {
@@ -96,6 +96,7 @@ exports.analyzeClothingItem = onCall({
     };
 
     const type = getMode(results.map(r => r.type));
+    const layer = getMode(results.map(r => r.layer || 'unknown')); // Consensus for layer
     const color = getMode(results.map(r => r.color));
     const style = getMode(results.map(r => r.style));
     const refreshCycle = parseInt(getMode(results.map(r => r.refreshCycle)) || 7);
@@ -132,6 +133,7 @@ exports.analyzeClothingItem = onCall({
 
     return {
         type,
+        layer,
         color,
         style,
         tags: consensusTags,
@@ -191,15 +193,36 @@ exports.generateOutfitSuggestions = onCall({
     const autoIncludeOuterwear = ['Cool', 'Cold', 'Rainy'].includes(criteria.temperature);
     const shouldIncludeOuterwear = criteria.includeOuterwear || autoIncludeOuterwear;
 
-    const itemsDescription = availableItems.map(item => ({
-        id: item.id,
-        type: item.type,
-        color: item.color,
-        tags: item.tags,
-        style: item.style,
-        rating: item.rating || 3,
-        wearCount: item.wearCount || 0
-    }));
+    // Helper to infer layer if missing
+    const inferLayer = (type, tags) => {
+        const t = (type || '').toLowerCase();
+        const tagStr = (tags || []).join(' ').toLowerCase();
+        
+        if (['jacket', 'coat', 'blazer', 'parka', 'raincoat', 'outerwear', 'cardigan', 'hoodie', 'sweatshirt'].some(k => t.includes(k) || tagStr.includes(k))) {
+            // Refine middle vs outer
+            if (['cardigan', 'hoodie', 'sweatshirt', 'flannel', 'jumper', 'sweater'].some(k => t.includes(k) || tagStr.includes(k))) return 'middle';
+            return 'outer';
+        }
+        if (['pants', 'jeans', 'skirt', 'shorts', 'leggings', 'trousers', 'joggers'].some(k => t.includes(k) || tagStr.includes(k))) return 'bottom';
+        if (['shoe', 'boot', 'sneaker', 'sandal', 'heel', 'flat', 'loafer'].some(k => t.includes(k) || tagStr.includes(k))) return 'shoes';
+        if (['dress', 'jumpsuit', 'romper', 'gown'].some(k => t.includes(k) || tagStr.includes(k))) return 'one_piece';
+        if (['hat', 'scarf', 'bag', 'purse', 'belt', 'jewelry', 'sunglasses'].some(k => t.includes(k) || tagStr.includes(k))) return 'accessory';
+        return 'base'; // Default to base top (shirt, t-shirt, etc)
+    };
+
+    const itemsDescription = availableItems.map(item => {
+        const layer = item.layer || inferLayer(item.type, item.tags);
+        return {
+            id: item.id,
+            type: item.type,
+            layer: layer,
+            color: item.color,
+            tags: item.tags,
+            style: item.style,
+            rating: item.rating || 3,
+            wearCount: item.wearCount || 0
+        };
+    });
 
     const prompt = `
   I need 3 outfit suggestions from the following wardrobe items:
@@ -214,12 +237,29 @@ exports.generateOutfitSuggestions = onCall({
   User Feedback History:${preferenceSummary || " None yet."}
 
   Rules:
-      1. Every outfit MUST include at least one item from EACH of these categories: 'top', 'bottom', 'shoes', 'socks' (if available in wardrobe).
-      2. IMPORTANT: Sweatshirts, hoodies, and sweaters are NOT considered 'tops'. They count as 'outerwear' or 'layers'. You MUST include a shirt/t-shirt/blouse underneath if you select one of these.
-      3. Outerwear Rule: ${shouldIncludeOuterwear ? "You MUST include an 'outerwear' layer (jacket, coat, hoodie, cardigan)." : "Do NOT force an outerwear layer unless the temperature is extremely cold (below 10C)."}
+      1. Structure:
+         - Standard: Base Layer + Bottom + Shoes
+         - One-Piece: One-Piece Item + Shoes
+         - Layering: Add Middle Layer or Outer Layer based on rules below.
+      2. Layer Definitions:
+         - 'base': T-shirts, shirts, blouses, tank tops.
+         - 'middle': Sweaters, sweatshirts, hoodies, flannels, cardigans.
+         - 'outer': Jackets, coats, blazers, parkas.
+      3. Layering Logic:
+         - If 'middle' layer is used (like a hoodie), you MUST also include a 'base' layer underneath.
+         - Should Include Outerwear: ${shouldIncludeOuterwear ? "You MUST include a 'middle' OR 'outer' layer." : "Prefer only 'base' layer unless 'middle' helps the style."}
+         - If Weather is 'Cold' or 'Rainy': Prefer 'outer' layer (jacket/coat) over just a 'middle' layer.
       4. Prioritize items with higher 'rating'.
       5. Consider 'wearCount' - if an item has a high rating but low wear count, suggest it more.
       6. Ensure the outfits are appropriate for the temperature and destination.
+
+  Please select 3 distinct outfits. For each outfit, provide:
+  1. A short, catchy name (3-5 words) for the outfit (key: "name").
+  2. A short summary explaining why it fits the criteria (key: "summary").
+  3. The list of item IDs used in the outfit (key: "items").
+  
+  Return the result as a JSON object with a key "outfits" containing an array of the 3 suggestions.
+`;
   Please select 3 distinct outfits. For each outfit, provide:
   1. A short, catchy name (3-5 words) for the outfit (key: "name").
   2. A short summary explaining why it fits the criteria (key: "summary").
