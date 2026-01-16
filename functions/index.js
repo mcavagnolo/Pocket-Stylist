@@ -156,6 +156,37 @@ exports.generateOutfitSuggestions = onCall({
 
     const { availableItems, criteria } = request.data;
     
+    // Fetch recent user preferences (likes/dislikes)
+    const db = admin.firestore();
+    let preferenceSummary = "";
+    try {
+        const prefsSnapshot = await db.collection('users').doc(request.auth.uid).collection('outfit_preferences')
+            .orderBy('timestamp', 'desc')
+            .limit(10)
+            .get();
+
+        if (!prefsSnapshot.empty) {
+            const liked = [];
+            const disliked = [];
+            
+            prefsSnapshot.forEach(doc => {
+                const data = doc.data();
+                // Create a short descriptor: "Casual: [blue, denim]"
+                const tagsStr = data.tags && data.tags.length ? `[${data.tags.slice(0, 5).join(', ')}]` : '';
+                const desc = `${data.context?.style || 'General'} style ${tagsStr}`;
+                
+                if (data.preference === 'like') liked.push(desc);
+                else if (data.preference === 'dislike') disliked.push(desc);
+            });
+
+            if (liked.length > 0) preferenceSummary += `\n  - RECENT LIKES (Try to emulate these combinations/styles): \n    ${liked.join('\n    ')}`;
+            if (disliked.length > 0) preferenceSummary += `\n  - RECENT DISLIKES (AVOID these combinations/styles): \n    ${disliked.join('\n    ')}`;
+        }
+    } catch (dbError) {
+        console.warn("Failed to fetch preferences:", dbError);
+        // Continue without preferences if fetch fails
+    }
+    
     // Automatically enforce outerwear for colder temps or rain
     const autoIncludeOuterwear = ['Cool', 'Cold', 'Rainy'].includes(criteria.temperature);
     const shouldIncludeOuterwear = criteria.includeOuterwear || autoIncludeOuterwear;
@@ -179,6 +210,8 @@ exports.generateOutfitSuggestions = onCall({
   - Temperature: ${criteria.temperature}
   - Style Preference: ${criteria.style}
   - Include Outerwear: ${shouldIncludeOuterwear ? 'YES' : 'NO'}
+
+  User Feedback History:${preferenceSummary || " None yet."}
 
   Rules:
       1. Every outfit MUST include at least one item from EACH of these categories: 'top', 'bottom', 'shoes', 'socks' (if available in wardrobe).
