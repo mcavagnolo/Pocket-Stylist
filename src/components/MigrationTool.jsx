@@ -10,16 +10,18 @@ export default function MigrationTool() {
   const { items } = useCloset();
   const { currentUser } = useAuth();
   const [migrating, setMigrating] = useState(false);
+  const [layerMigrating, setLayerMigrating] = useState(false);
   const [testing, setTesting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [total, setTotal] = useState(0);
   const [showModal, setShowModal] = useState(false);
 
-  const base64Items = items.filter(item => 
-    item.imageUri && item.imageUri.startsWith('data:')
-  );
+  // Filter items needing update
+  const base64Items = items.filter(item => item.imageUri && item.imageUri.startsWith('data:'));
+  const missingLayerItems = items.filter(item => !item.layer);
 
-  if (base64Items.length === 0) return null;
+  // Only show if there is work to do
+  if (base64Items.length === 0 && missingLayerItems.length === 0) return null;
 
   const handleTestConnection = async () => {
     setTesting(true);
@@ -44,6 +46,80 @@ export default function MigrationTool() {
     } finally {
       setTesting(false);
     }
+  };
+
+  const inferLayer = (type, tags) => {
+    const t = (type || '').toLowerCase();
+    const tagStr = (tags || []).join(' ').toLowerCase();
+    
+    if (['jacket', 'coat', 'blazer', 'parka', 'raincoat', 'outerwear'].some(k => t.includes(k) || tagStr.includes(k))) return 'outer';
+    // Refine middle
+    if (['cardigan', 'hoodie', 'sweatshirt', 'flannel', 'jumper', 'sweater', 'vest'].some(k => t.includes(k) || tagStr.includes(k))) return 'middle';
+    
+    if (['pants', 'jeans', 'skirt', 'shorts', 'leggings', 'trousers', 'joggers'].some(k => t.includes(k) || tagStr.includes(k))) return 'bottom';
+    if (['shoe', 'boot', 'sneaker', 'sandal', 'heel', 'flat', 'loafer'].some(k => t.includes(k) || tagStr.includes(k))) return 'shoes';
+    if (['dress', 'jumpsuit', 'romper', 'gown'].some(k => t.includes(k) || tagStr.includes(k))) return 'one_piece';
+    if (['hat', 'scarf', 'bag', 'purse', 'belt', 'jewelry', 'sunglasses'].some(k => t.includes(k) || tagStr.includes(k))) return 'accessory';
+    return 'base'; // Default to base (top)
+  };
+
+  const handleLayerMigration = async () => {
+      setLayerMigrating(true);
+      setTotal(missingLayerItems.length);
+      let completed = 0;
+      
+      try {
+          for (const item of missingLayerItems) {
+              const newLayer = inferLayer(item.type, item.tags);
+              await updateItemInDb(currentUser.uid, item.id, { layer: newLayer });
+              completed++;
+              setProgress(completed);
+          }
+          alert(`Layer Analysis Complete! Updated ${completed} items.`);
+      } catch (error) {
+          console.error("Layer migration failed:", error);
+          alert("Failed to update items.");
+      } finally {
+          setLayerMigrating(false);
+      }
+  };
+
+  const inferLayer = (type, tags) => {
+    const t = (type || '').toLowerCase();
+    const tagStr = (tags || []).join(' ').toLowerCase();
+    
+    if (['jacket', 'coat', 'blazer', 'parka', 'raincoat', 'outerwear'].some(k => t.includes(k) || tagStr.includes(k))) return 'outer';
+    // Refine middle
+    if (['cardigan', 'hoodie', 'sweatshirt', 'flannel', 'jumper', 'sweater', 'vest'].some(k => t.includes(k) || tagStr.includes(k))) return 'middle';
+    
+    if (['pants', 'jeans', 'skirt', 'shorts', 'leggings', 'trousers', 'joggers'].some(k => t.includes(k) || tagStr.includes(k))) return 'bottom';
+    if (['shoe', 'boot', 'sneaker', 'sandal', 'heel', 'flat', 'loafer'].some(k => t.includes(k) || tagStr.includes(k))) return 'shoes';
+    if (['dress', 'jumpsuit', 'romper', 'gown'].some(k => t.includes(k) || tagStr.includes(k))) return 'one_piece';
+    if (['hat', 'scarf', 'bag', 'purse', 'belt', 'jewelry', 'sunglasses'].some(k => t.includes(k) || tagStr.includes(k))) return 'accessory';
+    return 'base'; // Default to base (top)
+  };
+
+  const handleLayerMigration = async () => {
+      setMigrating(true); // Reuse state or add new one
+      setTotal(missingLayerItems.length);
+      let completed = 0;
+      
+      try {
+          for (const item of missingLayerItems) {
+              const newLayer = inferLayer(item.type, item.tags);
+              await updateItemInDb(currentUser.uid, item.id, { layer: newLayer });
+              completed++;
+              setProgress(completed);
+          }
+          alert(`Layer Analysis Complete! Updated ${completed} items.`);
+          // Trigger modal close or refresh
+          setShowModal(false);
+      } catch (error) {
+          console.error("Layer migration failed:", error);
+          alert("Failed to update items.");
+      } finally {
+          setMigrating(false);
+      }
   };
 
   const handleMigration = async () => {
@@ -98,53 +174,74 @@ export default function MigrationTool() {
         onPress={() => setShowModal(true)}
       >
         <Text style={styles.bannerText}>
-          ⚠️ {base64Items.length} items need optimization. Tap to fix.
+          ⚠️ System Maintenance Required. Tap to fix.
         </Text>
       </TouchableOpacity>
 
       <Modal visible={showModal} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.title}>Optimize Closet</Text>
-            <Text style={styles.description}>
-              We need to move your images to the new storage system to make the app faster. 
-              This will fix the slow loading times.
-            </Text>
-            
-            {migrating ? (
-              <View style={styles.progressContainer}>
-                <ActivityIndicator size="large" color="#ff8e52" />
-                <Text style={styles.progressText}>
-                  Optimizing {progress} / {total}
-                </Text>
-              </View>
-            ) : (
-              <View style={{ gap: 10 }}>
-                <View style={styles.buttons}>
-                  <TouchableOpacity 
-                    style={[styles.button, styles.primaryButton]} 
-                    onPress={handleMigration}
-                  >
-                    <Text style={styles.buttonText}>Start Optimization</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.button, styles.secondaryButton]} 
-                    onPress={() => setShowModal(false)}
-                  >
-                    <Text style={styles.secondaryButtonText}>Later</Text>
-                  </TouchableOpacity>
-                </View>
-                <TouchableOpacity 
-                  onPress={handleTestConnection}
-                  disabled={testing}
-                  style={{ alignSelf: 'center', padding: 10 }}
-                >
-                  <Text style={{ color: '#666', textDecorationLine: 'underline' }}>
-                    {testing ? "Testing..." : "Test Storage Connection"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            <Text style={styles.title}>System Maintenance</Text>
+            <ScrollView style={{ width: '100%', maxHeight: 400 }}>
+                {missingLayerItems.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Missing Layer Tags ({missingLayerItems.length})</Text>
+                        <Text style={styles.description}>
+                            New feature: Auto-detect base/middle/outer layers for better outfits.
+                        </Text>
+                        <TouchableOpacity 
+                            style={[styles.button, styles.primaryButton, layerMigrating && styles.disabled]} 
+                            onPress={handleLayerMigration}
+                            disabled={layerMigrating}
+                        >
+                            {layerMigrating ? <ActivityIndicator color="#fff"/> : <Text style={styles.buttonText}>Auto-Tag Layers</Text>}
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {base64Items.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Image Optimization ({base64Items.length})</Text>
+                        <Text style={styles.description}>
+                        Move images to cloud storage for speed.
+                        </Text>
+                        
+                        {migrating ? (
+                        <View style={styles.progressContainer}>
+                            <ActivityIndicator size="small" color="#ff8e52" />
+                            <Text style={styles.progressText}>
+                            Optimizing {progress} / {total}
+                            </Text>
+                        </View>
+                        ) : (
+                        <View style={{ gap: 10 }}>
+                            <TouchableOpacity 
+                                style={[styles.button, styles.primaryButton]} 
+                                onPress={handleMigration}
+                            >
+                                <Text style={styles.buttonText}>Migrate Images</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                onPress={handleTestConnection}
+                                disabled={testing}
+                                style={{ alignSelf: 'center', padding: 5 }}
+                            >
+                                <Text style={{ color: '#666', textDecorationLine: 'underline', fontSize: 12 }}>
+                                    {testing ? "Testing..." : "Test Connection"}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                        )}
+                    </View>
+                )}
+            </ScrollView>
+
+            <TouchableOpacity 
+                style={[styles.button, styles.secondaryButton, { marginTop: 15, width: '100%' }]} 
+                onPress={() => setShowModal(false)}
+            >
+                <Text style={styles.secondaryButtonText}>Close</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -176,37 +273,47 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 20,
     borderRadius: 16,
-    width: '80%',
-    alignItems: 'center'
+    width: '90%',
+    alignItems: 'center',
+    maxHeight: '80%'
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10
+    marginBottom: 15
+  },
+  section: {
+    marginBottom: 20,
+    padding: 15,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#eee',
+    width: '100%'
+  },
+  sectionTitle: {
+      fontWeight: 'bold', 
+      marginBottom: 5
   },
   description: {
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#666'
+    marginBottom: 15,
+    color: '#666',
+    fontSize: 14
   },
   progressContainer: {
     alignItems: 'center',
-    padding: 20
+    padding: 10
   },
   progressText: {
-    marginTop: 10,
-    fontSize: 16
-  },
-  buttons: {
-    flexDirection: 'row',
-    gap: 10
+    marginTop: 5,
+    fontSize: 14
   },
   button: {
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 25,
-    minWidth: 100,
-    alignItems: 'center'
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   primaryButton: {
     backgroundColor: '#ff8e52'
@@ -219,6 +326,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   },
   secondaryButtonText: {
-    color: '#333'
+    color: '#333',
+    fontWeight: 'bold'
+  },
+  disabled: {
+      opacity: 0.7
   }
 });
