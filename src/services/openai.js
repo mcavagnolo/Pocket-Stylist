@@ -34,8 +34,15 @@ export async function analyzeClothingItem(base64Image) {
  */
 export async function generateOutfitSuggestions(availableItems, criteria) {
   try {
+    // Optimization: Strip heavy image data before sending to Cloud Function
+    // to avoid hitting payload size limits.
+    const sanitizedItems = availableItems.map(item => {
+        const { imageUri, image, ...rest } = item;
+        return rest;
+    });
+
     const generateFunction = httpsCallable(functions, 'generateOutfitSuggestions');
-    const result = await generateFunction({ availableItems, criteria });
+    const result = await generateFunction({ availableItems: sanitizedItems, criteria });
     
     // The result.data is the array of outfits
     const suggestions = result.data || [];
@@ -47,6 +54,6 @@ export async function generateOutfitSuggestions(availableItems, criteria) {
     }));
   } catch (error) {
     console.error("Error generating outfits via Cloud Function:", error);
-    return [];
+    throw error; // Re-throw so UI can handle it
   }
 }

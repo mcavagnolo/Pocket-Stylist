@@ -139,7 +139,7 @@ export default function Schedule() {
       }
     } catch (error) {
       console.error("Generation failed", error);
-      alert("Failed to generate outfits. Check your API key.");
+      alert(`Failed to generate outfits: ${error.message || "Unknown error"}`);
     } finally {
       setLoading(false);
     }
