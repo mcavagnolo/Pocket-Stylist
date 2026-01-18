@@ -62,7 +62,7 @@ const ClosetItem = React.memo(({ item, onPress, isAvailable }) => (
   </TouchableOpacity>
 ));
 
-const CATEGORY_ORDER = ['Outerwear', 'Tops', 'Bottoms', 'Shoes', 'Socks', 'Accessories', 'Other'];
+const CATEGORY_ORDER = ['Outerwear', 'Middle Layers', 'Tops', 'Bottoms', 'Shoes', 'Socks', 'Accessories', 'Other'];
 
 export default function Closet() {
   const { items, isItemAvailable, deleteItem, updateItem } = useCloset();
@@ -102,11 +102,21 @@ export default function Closet() {
       if (!typeMatch || !tagMatch) return;
 
       const type = (item.type || '').toLowerCase();
+      const layer = (item.layer || '').toLowerCase();
       let key = 'Other';
 
-      // Categorization Logic
-      if (['jacket', 'coat', 'blazer', 'cardigan', 'vest', 'outerwear'].some(t => type.includes(t))) key = 'Outerwear';
-      else if (['shirt', 'blouse', 'top', 'tee', 'tank', 'sweater', 'hoodie', 'sweatshirt'].some(t => type.includes(t))) key = 'Tops';
+      // Categorization Logic (Prioritize 'layer' field, fall back to 'type')
+      if (layer === 'outer') key = 'Outerwear';
+      else if (layer === 'middle') key = 'Middle Layers';
+      else if (layer === 'base') key = 'Tops';
+      else if (layer === 'bottom') key = 'Bottoms';
+      else if (layer === 'shoes') key = 'Shoes';
+      else if (layer === 'accessory') key = 'Accessories';
+      
+      // Fallback if layer is missing or unknown
+      else if (['jacket', 'coat', 'blazer', 'parka', 'raincoat', 'outerwear'].some(t => type.includes(t))) key = 'Outerwear';
+      else if (['cardigan', 'hoodie', 'sweatshirt', 'flannel', 'jumper', 'sweater', 'vest'].some(t => type.includes(t))) key = 'Middle Layers';
+      else if (['shirt', 'blouse', 'top', 'tee', 'tank', 'polo'].some(t => type.includes(t))) key = 'Tops';
       else if (['pant', 'jean', 'short', 'skirt', 'legging', 'trousers', 'bottom'].some(t => type.includes(t))) key = 'Bottoms';
       else if (['shoe', 'sneaker', 'boot', 'sandal', 'heel', 'flat', 'loafer'].some(t => type.includes(t))) key = 'Shoes';
       else if (['sock', 'stocking'].some(t => type.includes(t))) key = 'Socks';

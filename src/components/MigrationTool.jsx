@@ -19,9 +19,19 @@ export default function MigrationTool() {
   // Filter items needing update
   const base64Items = items.filter(item => item.imageUri && item.imageUri.startsWith('data:'));
   const missingLayerItems = items.filter(item => !item.layer);
+  
+  // Specific fix for existing items tagged as 'base' (tops) but should be 'middle'
+  const middleLayerKeywords = ['sweatshirt', 'sweater', 'hoodie', 'cardigan', 'flannel', 'jumper', 'pullover', 'zip-up', 'fleece'];
+  const misidentifiedMiddleItems = items.filter(item => {
+      const isCurrentlyBase = !item.layer || item.layer === 'base' || item.layer === 'top';
+      const typeStr = (item.type || '').toLowerCase();
+      const tagsStr = (item.tags || []).join(' ').toLowerCase();
+      const matchesKeyword = middleLayerKeywords.some(k => typeStr.includes(k) || tagsStr.includes(k));
+      return isCurrentlyBase && matchesKeyword;
+  });
 
   // Only show if there is work to do
-  if (base64Items.length === 0 && missingLayerItems.length === 0) return null;
+  if (base64Items.length === 0 && missingLayerItems.length === 0 && misidentifiedMiddleItems.length === 0) return null;
 
   const handleTestConnection = async () => {
     setTesting(true);
@@ -48,36 +58,23 @@ export default function MigrationTool() {
     }
   };
 
-  const inferLayer = (type, tags) => {
-    const t = (type || '').toLowerCase();
-    const tagStr = (tags || []).join(' ').toLowerCase();
-    
-    if (['jacket', 'coat', 'blazer', 'parka', 'raincoat', 'outerwear'].some(k => t.includes(k) || tagStr.includes(k))) return 'outer';
-    // Refine middle
-    if (['cardigan', 'hoodie', 'sweatshirt', 'flannel', 'jumper', 'sweater', 'vest'].some(k => t.includes(k) || tagStr.includes(k))) return 'middle';
-    
-    if (['pants', 'jeans', 'skirt', 'shorts', 'leggings', 'trousers', 'joggers'].some(k => t.includes(k) || tagStr.includes(k))) return 'bottom';
-    if (['shoe', 'boot', 'sneaker', 'sandal', 'heel', 'flat', 'loafer'].some(k => t.includes(k) || tagStr.includes(k))) return 'shoes';
-    if (['dress', 'jumpsuit', 'romper', 'gown'].some(k => t.includes(k) || tagStr.includes(k))) return 'one_piece';
-    if (['hat', 'scarf', 'bag', 'purse', 'belt', 'jewelry', 'sunglasses'].some(k => t.includes(k) || tagStr.includes(k))) return 'accessory';
-    return 'base'; // Default to base (top)
-  };
+  // Helper moved below to avoid duplication
 
-  const handleLayerMigration = async () => {
+
+  const handleMiddleLayerFix = async () => {
       setLayerMigrating(true);
-      setTotal(missingLayerItems.length);
+      setTotal(misidentifiedMiddleItems.length);
       let completed = 0;
       
       try {
-          for (const item of missingLayerItems) {
-              const newLayer = inferLayer(item.type, item.tags);
-              await updateItemInDb(currentUser.uid, item.id, { layer: newLayer });
+          for (const item of misidentifiedMiddleItems) {
+              await updateItemInDb(currentUser.uid, item.id, { layer: 'middle' });
               completed++;
               setProgress(completed);
           }
-          alert(`Layer Analysis Complete! Updated ${completed} items.`);
+          alert(`Middle Layer Fix Complete! Re-tagged ${completed} items.`);
       } catch (error) {
-          console.error("Layer migration failed:", error);
+          console.error("Middle layer fix failed:", error);
           alert("Failed to update items.");
       } finally {
           setLayerMigrating(false);
@@ -183,6 +180,22 @@ export default function MigrationTool() {
           <View style={styles.modalContent}>
             <Text style={styles.title}>System Maintenance</Text>
             <ScrollView style={{ width: '100%', maxHeight: 400 }}>
+                {misidentifiedMiddleItems.length > 0 && (
+                     <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Fix Misclassified Middle Layers ({misidentifiedMiddleItems.length})</Text>
+                        <Text style={styles.description}>
+                            Found {misidentifiedMiddleItems.length} items (hoodies, sweaters, etc) currently listed as Tops. Move them to Middle Layer?
+                        </Text>
+                        <TouchableOpacity 
+                            style={[styles.button, styles.primaryButton, layerMigrating && styles.disabled]} 
+                            onPress={handleMiddleLayerFix}
+                            disabled={layerMigrating}
+                        >
+                            {layerMigrating ? <ActivityIndicator color="#fff"/> : <Text style={styles.buttonText}>Fix Middle Layers</Text>}
+                        </TouchableOpacity>
+                    </View>
+                )}
+
                 {missingLayerItems.length > 0 && (
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Missing Layer Tags ({missingLayerItems.length})</Text>

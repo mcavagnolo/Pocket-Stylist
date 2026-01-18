@@ -51,7 +51,7 @@ exports.analyzeClothingItem = onCall({
                     {
                         role: "user",
                         content: [
-                            { type: "text", text: "Analyze this clothing item. Return a JSON object with the following fields: 'type' (e.g., shirt, pants, dress), 'layer' (one of: 'base', 'middle', 'outer', 'bottom', 'shoes', 'one_piece', 'accessory'), 'color' (primary color), 'style' (e.g., casual, formal, sporty), 'tags' (array of 3-5 descriptive keywords), 'refreshCycle' (number of days before re-wearing), and 'boundingBox' (an array of 4 numbers [ymin, xmin, ymax, xmax] between 0 and 1)." },
+                            { type: "text", text: "Analyze this clothing item. Return a JSON object. 'type': specific item type (e.g. shirt, pants, dress, sweatshirt). 'layer': choose strictly from ['base', 'middle', 'outer', 'bottom', 'shoes', 'one_piece', 'accessory']. RULES: T-shirts/Shirts/Blouses are 'base'. Sweatshirts/Hoodies/Sweaters/Cardigans/Flannels are 'middle'. Jackets/Coats/Parkas are 'outer'. 'color': primary color. 'style': style. 'tags': 3-5 descriptive keywords. 'refreshCycle': days before re-wearing. 'boundingBox': [ymin, xmin, ymax, xmax] (0-1)." },
                             {
                                 type: "image_url",
                                 image_url: {
@@ -238,7 +238,7 @@ exports.generateOutfitSuggestions = onCall({
 
   Rules:
       1. Structure & Layers:
-         - Always Required: Bottom + Shoes + Base Layer (unless wearing a One-Piece).
+         - MANDATORY: Every outfit MUST have a Base Layer (Top) and a Bottom (unless wearing a One-Piece), plus Shoes.
          - Optional Layers: Middle Layer, Outer Layer.
       2. Layering Logic (Temperature Driven):
          - You (the AI) determine the necessary layers based on the 'Temperature' provided.
@@ -246,20 +246,13 @@ exports.generateOutfitSuggestions = onCall({
          - Mild/Cool: Base + Middle OR Base + Outer.
          - Cold: Base + Outer OR Base + Middle + Outer.
          - Rainy: Must include an Outer layer appropriate for rain.
-      3. configuration Rules:
+      3. Configuration Rules:
          - Base Layer is ALWAYS required under a Middle or Outer layer (no naked hoodies/jackets).
          - Middle Layer is OPTIONAL. You can have Base + Outer (e.g. T-Shirt + Jacket) without a Middle layer.
       4. Prioritize items with higher 'rating'.
       5. Consider 'wearCount' - if an item has a high rating but low wear count, suggest it more.
       6. Ensure the outfits are appropriate for the destination (e.g. don't suggest a hoodie for a formal event unless it matches the style).
 
-  Please select 3 distinct outfits. For each outfit, provide:
-  1. A short, catchy name (3-5 words) for the outfit (key: "name").
-  2. A short summary explaining why it fits the criteria (key: "summary").
-  3. The list of item IDs used in the outfit (key: "items").
-  
-  Return the result as a JSON object with a key "outfits" containing an array of the 3 suggestions.
-`;
   Please select 3 distinct outfits. For each outfit, provide:
   1. A short, catchy name (3-5 words) for the outfit (key: "name").
   2. A short summary explaining why it fits the criteria (key: "summary").
