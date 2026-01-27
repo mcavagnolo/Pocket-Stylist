@@ -156,7 +156,7 @@ exports.generateOutfitSuggestions = onCall({
     }
 
 
-    const { availableItems, criteria } = request.data;
+    const { availableItems, criteria, userPrompt } = request.data;
     
     // Fetch recent user preferences (likes/dislikes)
     const db = admin.firestore();
@@ -233,6 +233,8 @@ exports.generateOutfitSuggestions = onCall({
   - Temperature: ${criteria.temperature}
   - Style Preference: ${criteria.style}
   - Include Outerwear: ${shouldIncludeOuterwear ? 'YES' : 'NO'}
+
+  User's Specific Request: ${userPrompt ? `"${userPrompt}" (PRIORITIZE this request over general style preference)` : "None"}
 
   User Feedback History:${preferenceSummary || " None yet."}
 

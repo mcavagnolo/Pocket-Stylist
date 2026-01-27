@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Image, Modal } from 'react-native';
 import { useNavigate } from 'react-router-dom';
 import { useCloset } from '../context/ClosetContext';
@@ -24,6 +24,56 @@ export default function Outfits() {
   const [selectedOutfit, setSelectedOutfit] = useState(null);
   const [showDateModal, setShowDateModal] = useState(false);
   const [preferences, setPreferences] = useState({});
+  const [voicePrompt, setVoicePrompt] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
+
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+        recognitionRef.current.lang = 'en-US';
+
+        recognitionRef.current.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            setVoicePrompt(prev => {
+                const newText = prev ? prev + ". " + transcript : transcript;
+                return newText;
+            });
+            setIsListening(false);
+        };
+
+        recognitionRef.current.onerror = (event) => {
+            console.error("Speech recognition error", event.error);
+            setIsListening(false);
+        };
+        
+        recognitionRef.current.onend = () => {
+             setIsListening(false);
+        };
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+        alert("Voice recognition not supported in this browser. Please use Chrome or Safari.");
+        return;
+    }
+    if (isListening) {
+        recognitionRef.current.stop();
+        setIsListening(false);
+    } else {
+        try {
+            recognitionRef.current.start();
+            setIsListening(true);
+        } catch (e) {
+            console.error(e);
+            setIsListening(false);
+        }
+    }
+  };
 
   useEffect(() => {
     const initWeather = async () => {
@@ -115,7 +165,7 @@ export default function Outfits() {
         temperature,
         style,
         includeOuterwear
-      });
+      }, voicePrompt);
       setSuggestions(results);
     } catch (error) {
       console.error("Failed to generate outfits", error);
@@ -277,6 +327,25 @@ export default function Outfits() {
             <Text style={styles.buttonText}>Generate Outfits</Text>
           )}
         </TouchableOpacity>
+
+        <View style={styles.voiceSection}>
+            <Text style={styles.voiceLabel}>Tell the Assistant (Optional)</Text>
+            <View style={styles.voiceInputContainer}>
+                <TextInput
+                    style={styles.voiceInput}
+                    placeholder="Describe your desired look (e.g. 'edgy but comfortable', 'matching my red shoes')..."
+                    value={voicePrompt}
+                    onChangeText={setVoicePrompt}
+                    multiline
+                />
+                <TouchableOpacity 
+                    style={[styles.micButton, isListening && styles.micButtonActive]} 
+                    onPress={toggleListening}
+                >
+                    <Text style={{fontSize: 20}}>{isListening ? '🛑' : '🎙️'}</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
       </View>
 
       {suggestions.length > 0 && (
@@ -605,5 +674,42 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: '#333', 
     fontWeight: 'bold',
+  },
+  voiceSection: {
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    paddingTop: 15,
+  },
+  voiceLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#333',
+  },
+  voiceInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingRight: 8,
+  },
+  voiceInput: {
+    flex: 1,
+    padding: 10,
+    minHeight: 50,
+    fontSize: 14,
+  },
+  micButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  micButtonActive: {
+    backgroundColor: '#ffebee',
+    borderWidth: 1,
+    borderColor: 'red',
   },
 });

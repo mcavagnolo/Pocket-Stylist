@@ -30,9 +30,10 @@ export async function analyzeClothingItem(base64Image) {
  * Generates outfit suggestions based on available items and criteria via Cloud Function.
  * @param {Array} availableItems - List of available clothing items
  * @param {Object} criteria - User criteria (destination, temperature, style)
+ * @param {string} userPrompt - Optional voice/text prompt from user
  * @returns {Promise<Array>} - Array of 3 outfit suggestions
  */
-export async function generateOutfitSuggestions(availableItems, criteria) {
+export async function generateOutfitSuggestions(availableItems, criteria, userPrompt = '') {
   try {
     // Optimization: Strip heavy image data before sending to Cloud Function
     // to avoid hitting payload size limits.
@@ -42,7 +43,7 @@ export async function generateOutfitSuggestions(availableItems, criteria) {
     });
 
     const generateFunction = httpsCallable(functions, 'generateOutfitSuggestions');
-    const result = await generateFunction({ availableItems: sanitizedItems, criteria });
+    const result = await generateFunction({ availableItems: sanitizedItems, criteria, userPrompt });
     
     // The result.data is the array of outfits
     const suggestions = result.data || [];
