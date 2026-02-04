@@ -439,7 +439,8 @@ export default function Schedule() {
           </TouchableOpacity>
         </View>
       </Modal>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
