@@ -10,8 +10,31 @@ import { OCCASIONS, STYLES, TEMPS } from '../data/constants';
 import TooltipModal from '../components/TooltipModal';
 import PageHeader from '../components/PageHeader';
 
+// SmartImage component for robust web rendering
+const SmartImage = ({ uri, style }) => {
+  if (Platform.OS === 'web') {
+    return (
+      <div style={{ ...StyleSheet.flatten(style), overflow: 'hidden', position: 'relative' }}>
+        <img 
+          src={uri} 
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block'
+          }}
+          loading="lazy"
+          alt="outfit item"
+        />
+      </div>
+    );
+  }
+  // Native fallback
+  return <Image source={{ uri }} style={style} />;
+};
+
 export default function Outfits() {
-  const { items, isItemAvailable, addToSchedule, schedule } = useCloset();
+  const { items, isItemAvailable, addToSchedule, schedule, favorites } = useCloset();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [destination, setDestination] = useState('');
@@ -38,6 +61,24 @@ export default function Outfits() {
       localStorage.setItem('hasSeenOutfitsTooltip', 'true');
     }
   }, []);
+
+  // Helper to check if an outfit is favorited
+  const isFavorited = (outfit) => {
+    if (!favorites || favorites.length === 0) return false;
+    // Check by existing outfitId if present
+    if (outfit.outfitId) {
+        return favorites.some(fav => fav.outfitId === outfit.outfitId);
+    }
+    // Fallback: Check by item arrays match
+    if (outfit.items) {
+        const outfitIds = [...outfit.items].sort().join(',');
+        return favorites.some(fav => {
+            const favIds = [...fav.items].sort().join(',');
+            return favIds === outfitIds;
+        });
+    }
+    return false;
+  };
 
   const playSound = (type) => {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -421,9 +462,12 @@ export default function Outfits() {
                 {outfit.items.map(itemId => {
                   const item = getItemDetails(itemId);
                   if (!item) return null;
+                  const imgUri = item.imageUri || item.image;
+                  if (!imgUri) return null;
+
                   return (
                     <View key={itemId} style={styles.itemPreview}>
-                      <Image source={{ uri: item.imageUri || item.image }} style={styles.itemImage} />
+                      <SmartImage uri={imgUri} style={styles.itemImage} />
                     </View>
                   );
                 })}
