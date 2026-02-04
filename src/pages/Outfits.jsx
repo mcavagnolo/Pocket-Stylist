@@ -783,8 +783,7 @@ const styles = StyleSheet.create({
   micText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333'
-    transform: [{ scale: 1.1 }],
+    color: '#333',
   },
   itemImage: {
     width: 180, // 120 * 1.5
