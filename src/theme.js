@@ -1,14 +1,14 @@
 export const theme = {
   colors: {
-    background: '#fff9ec',
-    primary: '#00202b',
-    highlight: '#ff8e52',
-    text: '#00202b',
-    secondaryText: '#666666',
+    background: '#F3E5F5', // Light Purple
+    primary: '#4A148C',    // Deep Purple
+    highlight: '#FF4081',  // Pink Accent
+    text: '#212121',
+    secondaryText: '#757575',
     white: '#ffffff',
-    border: '#eee',
-    error: '#FF3B30',
-    success: '#34C759',
+    border: '#E0E0E0',
+    error: '#FF5252',
+    success: '#00E676',
   },
   spacing: {
     small: 8,

@@ -5,22 +5,23 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #fff9ec; /* theme.colors.background */
+  background-color: #F3E5F5; /* theme.colors.background */
 }
 
 input, textarea, select {
   font-size: 16px;
+  font-family: 'Poppins', sans-serif;
 }
 
 a {
-  color: #ff8e52; /* theme.colors.highlight */
+  color: #FF4081; /* theme.colors.highlight */
   text-decoration: none;
 }
 
 /* Custom Scrollbar - Enforce visibility */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #FF6B6B transparent;
+  scrollbar-color: #AB47BC transparent;
 }
 
 ::-webkit-scrollbar {
@@ -34,17 +35,20 @@ a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #FF6B6B; /* Pink like trash can */
+  background-color: #AB47BC; /* Purple */
   border-radius: 2px;
-  border: 2px solid transparent; /* Creates padding effect if background-clip is used, but here simpler is better */
+  border: 2px solid transparent; 
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #ff5252; 
+  background-color: #8E24AA; 
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
-/* Force horizontal scroll for React Native Web ScrollView wrapper if needed */
+body, button, input, textarea {
+  font-family: 'Poppins', sans-serif;
+}
 .r-18u37iz {
   overflow-x: auto;
 }

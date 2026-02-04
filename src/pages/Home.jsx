@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIn
 import { useAuth } from '../context/AuthContext';
 import { getFavoriteOutfits, deleteFavoriteOutfit } from '../services/db';
 import { useCloset } from '../context/ClosetContext';
-import { FaTrash, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaTrash, FaChevronDown, FaChevronUp, FaInfoCircle } from 'react-icons/fa';
+import TooltipModal from '../components/TooltipModal';
 
 export default function Home() {
   const { currentUser } = useAuth();
@@ -14,6 +15,15 @@ export default function Home() {
   const [selectedOutfit, setSelectedOutfit] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [expandedItems, setExpandedItems] = useState({});
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  useEffect(() => {
+    const hasSeenTooltip = localStorage.getItem('hasSeenHomeTooltip');
+    if (!hasSeenTooltip) {
+      setShowTooltip(true);
+      localStorage.setItem('hasSeenHomeTooltip', 'true');
+    }
+  }, []);
 
   useEffect(() => {
     async function loadFavorites() {
@@ -82,6 +92,20 @@ export default function Home() {
   return (
     <ScrollView style={{flex: 1}} contentContainerStyle={styles.container}>
       
+      <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 20, position: 'relative'}}>
+         <Text style={styles.title}>Home</Text>
+         <TouchableOpacity onPress={() => setShowTooltip(true)} style={{position: 'absolute', right: 0}}>
+             <FaInfoCircle size={24} color="#FF4081" />
+         </TouchableOpacity>
+      </View>
+
+      <TooltipModal 
+        visible={showTooltip} 
+        onClose={() => setShowTooltip(false)}
+        title="Welcome Home!"
+        content="Here are your saved favorite outfits. You can view details, schedule them for specific dates, or remove them."
+      />
+
       {!currentUser && (
         <Text style={styles.welcomeText}>Welcome! Log in to see your favorite styles.</Text>
       )}
@@ -352,8 +376,8 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   itemImage: {
-    width: 70,
-    height: 70,
+    width: 105,
+    height: 105,
     borderRadius: 8,
     backgroundColor: '#f0f0f0',
   },

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, ActivityIndicator, TextInput, Platform } from 'react-native';
 import { useCloset } from '../context/ClosetContext';
 import { getWeatherForecast, getWeatherDescription, getLocationName } from '../services/weather';
 import { generateOutfitSuggestions } from '../services/openai';
 import { saveOutfitPreference, saveFavoriteOutfit } from '../services/db';
-import { FaTrash, FaThumbsUp, FaThumbsDown, FaHeart, FaRegHeart } from 'react-icons/fa';
+import { FaTrash, FaThumbsUp, FaThumbsDown, FaHeart, FaRegHeart, FaInfoCircle } from 'react-icons/fa';
 import { OCCASIONS, STYLES, TEMPS } from '../data/constants';
+import TooltipModal from '../components/TooltipModal';
 
 export default function Schedule() {
   const { schedule, items, addToSchedule, removeFromSchedule, favorites, addFavorite, isItemAvailable } = useCloset();
@@ -18,6 +19,15 @@ export default function Schedule() {
   const [ratedOutfits, setRatedOutfits] = useState({});
   const [criteria, setCriteria] = useState({ destination: '', style: '', temperature: '', includeOuterwear: false });
   const [activeTab, setActiveTab] = useState('generate');
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  useEffect(() => {
+    const hasSeenTooltip = localStorage.getItem('hasSeenScheduleTooltip');
+    if (!hasSeenTooltip) {
+      setShowTooltip(true);
+      localStorage.setItem('hasSeenScheduleTooltip', 'true');
+    }
+  }, []);
 
   useEffect(() => {
     const fetchWeather = async () => {
@@ -170,15 +180,27 @@ export default function Schedule() {
   const days = getNext7Days();
 
   return (
-    <ScrollView 
-        contentContainerStyle={styles.container} 
-        showsVerticalScrollIndicator={true}
-        persistentScrollbar={true} //- For Android, maps to nothing on web usually, but good practice
-    >
-      <View style={styles.headerRow}>
-         <Text style={styles.title}>Outfit Schedule</Text>
-         {locationName ? <Text style={styles.locationText}>📍 {locationName}</Text> : null}
+    <View style={styles.container}>
+      <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 20, position: 'relative', marginTop: 15}}>
+         <Text style={styles.title}>Plan</Text>
+         <TouchableOpacity onPress={() => setShowTooltip(true)} style={{position: 'absolute', right: 20}}>
+             <FaInfoCircle size={24} color="#FF4081" />
+         </TouchableOpacity>
       </View>
+
+      <TooltipModal 
+        visible={showTooltip} 
+        onClose={() => setShowTooltip(false)}
+        title="Weekly Plan"
+        content="See your week ahead and plan your outfits based on the weather. Tap any day to add or change an outfit!"
+      />
+
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={true}
+        persistentScrollbar={true}
+      >
+        {locationName ? <Text style={{textAlign: 'center', marginBottom: 15, color: '#666', fontSize: 16}}>📍 {locationName}</Text> : null}
       
       {days.map(date => {
         const scheduleEntry = schedule[date];
@@ -591,8 +613,8 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   smallImage: {
-    width: 50,
-    height: 50,
+    width: 75,
+    height: 75,
     borderRadius: 5,
     marginRight: 5,
   },
@@ -669,8 +691,8 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   favImage: {
-    width: 50,
-    height: 50,
+    width: 75,
+    height: 75,
     borderRadius: 4,
     marginRight: 5,
   },

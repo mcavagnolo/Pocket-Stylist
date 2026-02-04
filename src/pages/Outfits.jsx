@@ -7,6 +7,8 @@ import { generateOutfitSuggestions } from '../services/openai';
 import { getWeatherForecast, getLocationName, getWeatherDescription } from '../services/weather';
 import { saveOutfitPreference, saveFavoriteOutfit } from '../services/db';
 import { OCCASIONS, STYLES, TEMPS } from '../data/constants';
+import TooltipModal from '../components/TooltipModal';
+import { FaInfoCircle } from 'react-icons/fa';
 
 export default function Outfits() {
   const { items, isItemAvailable, addToSchedule, schedule } = useCloset();
@@ -27,6 +29,38 @@ export default function Outfits() {
   const [voicePrompt, setVoicePrompt] = useState('');
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  useEffect(() => {
+    const hasSeenTooltip = localStorage.getItem('hasSeenOutfitsTooltip');
+    if (!hasSeenTooltip) {
+      setShowTooltip(true);
+      localStorage.setItem('hasSeenOutfitsTooltip', 'true');
+    }
+  }, []);
+
+  const playSound = (type) => {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    if (type === 'start') {
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.1);
+    } else if (type === 'end') {
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // A5
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.1);
+    }
+  };
 
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -38,11 +72,7 @@ export default function Outfits() {
 
         recognitionRef.current.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
-            setVoicePrompt(prev => {
-                const newText = prev ? prev + ". " + transcript : transcript;
-                return newText;
-            });
-            setIsListening(false);
+            setVoicePrompt(transcript);
         };
 
         recognitionRef.current.onerror = (event) => {
@@ -52,9 +82,22 @@ export default function Outfits() {
         
         recognitionRef.current.onend = () => {
              setIsListening(false);
+             playSound('end');
+             // Auto-submit after voice
+             // We need to trigger the generation, but handleGenerate uses state that might not be updated yet
+             // Using a small timeout or useEffect dependency could work, but let's just trigger it manually 
+             // in a useEffect that watches voicePrompt changes if we were continuous, but here we just want it once.
+             // Best to just submit in the next tick.
         };
     }
   }, []);
+
+  useEffect(() => {
+     if (!isListening && voicePrompt) {
+         handleGenerate(true);
+     }
+  }, [voicePrompt, isListening]);
+
 
   const toggleListening = () => {
     if (!recognitionRef.current) {
@@ -63,9 +106,12 @@ export default function Outfits() {
     }
     if (isListening) {
         recognitionRef.current.stop();
-        setIsListening(false);
+        // Sound played in onend
+        // Generation triggered in useEffect
     } else {
         try {
+            playSound('start');
+            setVoicePrompt(''); // Clear previous
             recognitionRef.current.start();
             setIsListening(true);
         } catch (e) {
@@ -148,9 +194,9 @@ export default function Outfits() {
     return days;
   };
 
-  const handleGenerate = async () => {
-    if (!destination || !temperature || !style) {
-      alert("Please fill in all fields");
+  const handleGenerate = async (isVoice = false) => {
+    if (!isVoice && (!destination || !temperature || !style)) {
+      alert("⚠️ Needs more info!\n\nPlease select a destination, temperature, and style to generate outfits.");
       return;
     }
 
@@ -160,10 +206,14 @@ export default function Outfits() {
     const availableItems = items.filter(isItemAvailable);
     
     try {
+      // If voice command exists, it can override standard validaton or be additive
+      // But standard call requires fields. Let's provide defaults if voice is used but fields empty?
+      // Or just pass current state.
+      
       const results = await generateOutfitSuggestions(availableItems, {
-        destination,
-        temperature,
-        style,
+        destination: destination || 'Any',
+        temperature: temperature || 'Any',
+        style: style || 'Any',
         includeOuterwear
       }, voicePrompt);
       setSuggestions(results);
@@ -252,19 +302,46 @@ export default function Outfits() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={true}
     >
-      <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10}}>
+      <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 10, position: 'relative'}}>
          <Text style={styles.title}>Dressing Room</Text>
-         {locationName && (
-             <View style={{alignItems: 'flex-end'}}>
+         <TouchableOpacity onPress={() => setShowTooltip(true)} style={{position: 'absolute', right: 0}}>
+             <FaInfoCircle size={24} color="#FF4081" />
+         </TouchableOpacity>
+      </View>
+      
+      <TooltipModal 
+        visible={showTooltip} 
+        onClose={() => setShowTooltip(false)}
+        title="Style Yourself!"
+        content="Select your destination, temp, and style OR just tell the AI what you want! Tap the mic to start."
+      />
+
+       {/* Location Header - Kept existing logic */}
+       {locationName && (
+             <View style={{alignItems: 'center', marginBottom: 15 }}>
                  <Text style={{fontSize: 14, fontWeight: 'bold', color: '#555'}}>📍 {locationName}</Text>
                  {currentTempRange && (
                      <Text style={{fontSize: 12, color: '#777'}}>{currentTempRange} • {currentWeatherDesc}</Text>
                  )}
              </View>
          )}
-      </View>
 
       <View style={styles.form}>
+        
+        {/* Voice Assistant Moved Up */}
+        <View style={styles.voiceSection}>
+            <Text style={styles.voiceLabel}>✨ Tell me what you want to wear:</Text>
+            <TouchableOpacity 
+                style={[styles.micButton, isListening && styles.micButtonActive]} 
+                onPress={toggleListening}
+            >
+                <Text style={{fontSize: 32}}>{isListening ? '🛑' : '🎙️'}</Text>
+                <Text style={{fontSize: 12, marginTop: 5, color: isListening ? 'red' : '#333'}}>
+                    {isListening ? 'Tap to Stop & Generate' : 'Tap to Speak'}
+                </Text>
+            </TouchableOpacity>
+        </View>
+
         <Text style={styles.label}>Destination / Occasion</Text>
         <View style={styles.chipContainer}>
             {OCCASIONS.map(opt => (
@@ -676,40 +753,43 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   voiceSection: {
-    marginTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    paddingTop: 15,
-  },
-  voiceLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#333',
-  },
-  voiceInputContainer: {
-    flexDirection: 'row',
+    marginBottom: 20,
     alignItems: 'center',
     backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingRight: 8,
+    borderColor: '#eee',
+    elevation: 1,
   },
-  voiceInput: {
-    flex: 1,
-    padding: 10,
-    minHeight: 50,
-    fontSize: 14,
+  voiceLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
   },
   micButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
+    padding: 15,
+    borderRadius: 50,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 100,
+    height: 100,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    elevation: 3,
   },
   micButtonActive: {
-    backgroundColor: '#ffebee',
-    borderWidth: 1,
-    borderColor: 'red',
+    backgroundColor: '#F3E5F5',
+    borderColor: '#FF4081',
+    borderWidth: 2,
+    transform: [{ scale: 1.1 }],
+  },
+  itemImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 5,
+    marginBottom: 5,
   },
 });
