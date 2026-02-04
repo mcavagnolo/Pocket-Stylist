@@ -55,10 +55,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
-    flex: 1,
-    alignItems: 'flex-end',
-    marginLeft: 10,
-  },
-});
 
 export default PageHeader;
