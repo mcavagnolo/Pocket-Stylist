@@ -9,6 +9,28 @@ import { OCCASIONS, STYLES, TEMPS } from '../data/constants';
 import TooltipModal from '../components/TooltipModal';
 import PageHeader from '../components/PageHeader';
 
+// Robust Image Component for Web
+const SmartImage = ({ uri, style }) => {
+  if (Platform.OS === 'web') {
+    return (
+      <div style={{ ...StyleSheet.flatten(style), overflow: 'hidden', position: 'relative' }}>
+        <img 
+          src={uri} 
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block'
+          }}
+          loading="lazy"
+          alt="outfit item"
+        />
+      </div>
+    );
+  }
+  return <Image source={{ uri }} style={style} />;
+};
+
 export default function Schedule() {
   const { schedule, items, addToSchedule, removeFromSchedule, favorites, addFavorite, isItemAvailable } = useCloset();
   const [weather, setWeather] = useState({});
@@ -384,9 +406,9 @@ export default function Schedule() {
                             if (!imgUri) return null;
                             
                             return (
-                            <Image 
+                            <SmartImage 
                                 key={`${id}-${idx}`} 
-                                source={{ uri: imgUri }} 
+                                uri={imgUri} 
                                 style={styles.smallImage} 
                             />
                             );
