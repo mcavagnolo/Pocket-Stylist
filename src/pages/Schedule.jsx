@@ -366,8 +366,8 @@ export default function Schedule() {
                     if (!outfit) return null;
                     return (
                     <View key={index} style={styles.suggestionCard}>
-                        <Text style={styles.suggestionName}>{outfit.name || "Suggested Outfit"}</Text>
-                        <Text style={styles.suggestionSummary}>{outfit.reason || outfit.summary || ""}</Text>
+                        <Text style={styles.suggestionName}>{String(outfit.name || "Suggested Outfit")}</Text>
+                        <Text style={styles.suggestionSummary}>{String(outfit.reason || outfit.summary || "")}</Text>
                         <ScrollView horizontal>
                         {Array.isArray(outfit.items) && outfit.items.map((id, idx) => {
                             const item = getItemDetails(id);
