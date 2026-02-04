@@ -181,11 +181,15 @@ export default function Schedule() {
 
   return (
     <View style={styles.container}>
-      <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 20, position: 'relative', marginTop: 15}}>
-         <Text style={styles.title}>Plan</Text>
-         <TouchableOpacity onPress={() => setShowTooltip(true)} style={{position: 'absolute', right: 20}}>
-             <FaInfoCircle size={24} color="#FF4081" />
-         </TouchableOpacity>
+      <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, marginTop: 15, position: 'relative'}}>
+         <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <Text style={styles.title}>Plan</Text>
+            <TouchableOpacity onPress={() => setShowTooltip(true)} style={{marginLeft: 8}}>
+                <FaInfoCircle size={16} color="#FF4081" />
+            </TouchableOpacity>
+         </View>
+         
+         {locationName ? <Text style={{fontSize: 14, fontWeight: 'bold', color: '#555'}}>📍 {locationName}</Text> : null}
       </View>
 
       <TooltipModal 
@@ -200,7 +204,6 @@ export default function Schedule() {
         showsVerticalScrollIndicator={true}
         persistentScrollbar={true}
       >
-        {locationName ? <Text style={{textAlign: 'center', marginBottom: 15, color: '#666', fontSize: 16}}>📍 {locationName}</Text> : null}
       
       {days.map(date => {
         const scheduleEntry = schedule[date];
@@ -457,7 +460,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
+    fontFamily: 'Poppins, sans-serif',
     fontWeight: 'bold',
   },
   locationText: {

@@ -92,10 +92,10 @@ export default function Home() {
   return (
     <ScrollView style={{flex: 1}} contentContainerStyle={styles.container}>
       
-      <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 20, position: 'relative'}}>
+      <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 20}}>
          <Text style={styles.title}>Home</Text>
-         <TouchableOpacity onPress={() => setShowTooltip(true)} style={{position: 'absolute', right: 0}}>
-             <FaInfoCircle size={24} color="#FF4081" />
+         <TouchableOpacity onPress={() => setShowTooltip(true)} style={{marginLeft: 8}}>
+             <FaInfoCircle size={16} color="#FF4081" />
          </TouchableOpacity>
       </View>
 
@@ -296,9 +296,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
+    fontFamily: 'Poppins, sans-serif',
     fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
     color: '#333',
   },
   welcomeText: {

@@ -395,8 +395,8 @@ export default function Outfits() {
 
         <TouchableOpacity 
           style={[styles.button, loading && styles.disabledButton]} 
-          onPress={handleGenerate}
-          disabled={loading || !destination || !style}
+          onPress={() => handleGenerate(false)}
+          disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
@@ -405,24 +405,6 @@ export default function Outfits() {
           )}
         </TouchableOpacity>
 
-        <View style={styles.voiceSection}>
-            <Text style={styles.voiceLabel}>Tell the Assistant (Optional)</Text>
-            <View style={styles.voiceInputContainer}>
-                <TextInput
-                    style={styles.voiceInput}
-                    placeholder="Describe your desired look (e.g. 'edgy but comfortable', 'matching my red shoes')..."
-                    value={voicePrompt}
-                    onChangeText={setVoicePrompt}
-                    multiline
-                />
-                <TouchableOpacity 
-                    style={[styles.micButton, isListening && styles.micButtonActive]} 
-                    onPress={toggleListening}
-                >
-                    <Text style={{fontSize: 20}}>{isListening ? '🛑' : '🎙️'}</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
       </View>
 
       {suggestions.length > 0 && (
@@ -669,9 +651,9 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'transparent', // Match outline button sizing
+    marginTop: 10,
+    width: '100%',
+    alignItems: 'center',
   },
   scheduleButtonText: {
     color: '#fff',
@@ -749,12 +731,9 @@ const styles = StyleSheet.create({
   voiceSection: {
     marginBottom: 20,
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#F8E1F4', // Light Purple background
     padding: 15,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#eee',
-    elevation: 1,
   },
   voiceLabel: {
     fontSize: 16,
@@ -770,8 +749,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 100,
     height: 100,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    // Removed borderWidth/borderColor to remove circle
     elevation: 3,
   },
   micButtonActive: {

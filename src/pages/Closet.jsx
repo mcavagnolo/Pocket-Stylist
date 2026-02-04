@@ -1,11 +1,12 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity, Modal, ScrollView, Platform } from 'react-native';
 import { useNavigate } from 'react-router-dom';
-import { FaFilter, FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaFilter, FaTimes, FaChevronDown, FaChevronUp, FaInfoCircle } from 'react-icons/fa';
 import { useCloset } from '../context/ClosetContext';
 import { addItemToDb, getUserItems } from '../services/db';
 import { useAuth } from '../context/AuthContext';
 import { resizeImage } from '../utils/image';
+import TooltipModal from '../components/TooltipModal';
 
 const numColumns = 2;
 const screenWidth = Dimensions.get('window').width;
@@ -77,6 +78,15 @@ export default function Closet() {
     type: [],
     tags: []
   });
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  useEffect(() => {
+    const hasSeenTooltip = localStorage.getItem('hasSeenClosetTooltip');
+    if (!hasSeenTooltip) {
+      setShowTooltip(true);
+      localStorage.setItem('hasSeenClosetTooltip', 'true');
+    }
+  }, []);
   
   const cameraInputRef = useRef(null);
   const libraryInputRef = useRef(null);
