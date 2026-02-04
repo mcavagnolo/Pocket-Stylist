@@ -423,7 +423,8 @@ export default function Schedule() {
                             </View>
                         </View>
                     </View>
-                    ))}
+                    );
+                    })}
                 </>
             ) : (
                 <View style={styles.favoritesGrid}>
