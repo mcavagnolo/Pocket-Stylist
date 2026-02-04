@@ -1,7 +1,7 @@
 import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity, Modal, ScrollView, Platform } from 'react-native';
 import { useNavigate } from 'react-router-dom';
-import { FaFilter, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaFilter, FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { useCloset } from '../context/ClosetContext';
 import { addItemToDb, getUserItems } from '../services/db';
 import { useAuth } from '../context/AuthContext';
