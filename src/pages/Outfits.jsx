@@ -627,12 +627,6 @@ const styles = StyleSheet.create({
     marginRight: 15,
     alignItems: 'center',
   },
-  itemImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 5,
-    marginBottom: 5,
-  },
   itemType: {
     fontSize: 12,
     color: '#666',
