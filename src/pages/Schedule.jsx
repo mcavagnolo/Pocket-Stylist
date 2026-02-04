@@ -362,17 +362,19 @@ export default function Schedule() {
                     )}
                     </TouchableOpacity>
 
-                    {suggestions.map((outfit, index) => (
+                    {suggestions.map((outfit, index) => {
+                    if (!outfit) return null;
+                    return (
                     <View key={index} style={styles.suggestionCard}>
-                        <Text style={styles.suggestionName}>{outfit.name}</Text>
-                        <Text style={styles.suggestionSummary}>{outfit.reason || outfit.summary}</Text>
+                        <Text style={styles.suggestionName}>{outfit.name || "Suggested Outfit"}</Text>
+                        <Text style={styles.suggestionSummary}>{outfit.reason || outfit.summary || ""}</Text>
                         <ScrollView horizontal>
-                        {outfit.items && outfit.items.map(id => {
+                        {Array.isArray(outfit.items) && outfit.items.map((id, idx) => {
                             const item = getItemDetails(id);
                             if (!item) return null;
                             return (
                             <Image 
-                                key={id} 
+                                key={`${id}-${idx}`} 
                                 source={{ uri: item.imageUri || item.image }} 
                                 style={styles.smallImage} 
                             />
