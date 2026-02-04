@@ -366,8 +366,8 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   itemImage: {
-    width: 105,
-    height: 105,
+    width: 157, // 105 * 1.5
+    height: 157, // 105 * 1.5
     borderRadius: 8,
     backgroundColor: '#f0f0f0',
   },

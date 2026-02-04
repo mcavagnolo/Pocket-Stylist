@@ -84,7 +84,7 @@ function AppContent() {
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
           <Image 
             source={{ uri: logo }} 
-            style={{ width: 243, height: 70, resizeMode: 'contain' }} 
+            style={{ width: 243, height: 70, resizeMode: 'contain', mixBlendMode: 'multiply' }} 
           />
         </View>
         <TouchableOpacity onPress={() => setShowAccount(true)}>

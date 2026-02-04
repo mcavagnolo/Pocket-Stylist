@@ -330,14 +330,15 @@ export default function Outfits() {
         
         {/* Voice Assistant Moved Up */}
         <View style={styles.voiceSection}>
-            <Text style={styles.voiceLabel}>✨ Tell me what you want to wear:</Text>
             <TouchableOpacity 
-                style={[styles.micButton, isListening && styles.micButtonActive]} 
+                style={styles.micButton}
                 onPress={toggleListening}
             >
-                <Text style={{fontSize: 32}}>{isListening ? '🛑' : '🎙️'}</Text>
-                <Text style={{fontSize: 12, marginTop: 5, color: isListening ? 'red' : '#333'}}>
-                    {isListening ? 'Tap to Stop & Generate' : 'Tap to Speak'}
+                <View style={[styles.micIconContainer, isListening && styles.micIconActive]}>
+                    <Text style={{fontSize: 24, color: isListening ? '#FF4081' : '#555'}}>🎙️</Text>
+                </View>
+                <Text style={styles.micText}>
+                    {isListening ? 'Listening...' : 'Tap for AI Stylist'}
                 </Text>
             </TouchableOpacity>
         </View>
@@ -426,7 +427,7 @@ export default function Outfits() {
                 })}
               </ScrollView>
               
-              <View style={styles.actionsRow}>
+              <View style={styles.actionsContainer}>
                 <View style={styles.voteButtons}>
                   <TouchableOpacity 
                     style={[styles.voteButton, preferences[index] === 'like' && styles.likedButton]} 
@@ -442,15 +443,22 @@ export default function Outfits() {
                   >
                     <Text style={styles.voteEmoji}>👎</Text>
                   </TouchableOpacity>
+                  {/* Heart Action */}
+                  <TouchableOpacity 
+                    style={[styles.voteButton, styles.heartButton]} 
+                    onPress={() => handleSave(outfit)}
+                  >
+                     <Text style={styles.voteEmoji}>❤️</Text>
+                  </TouchableOpacity>
                 </View>
                 
-                <View style={{flexDirection: 'row', gap: 10}}>
-                  <TouchableOpacity style={styles.outlineButton} onPress={() => handleSave(outfit)}>
-                    <Text style={styles.outlineButtonText}>Save Fav</Text>
+                <View style={styles.actionButtonsRow}>
+                  <TouchableOpacity style={styles.actionButton} onPress={() => handleSave(outfit)}>
+                    <Text style={styles.actionButtonText}>Save Fav</Text>
                   </TouchableOpacity>
                   
-                  <TouchableOpacity style={styles.scheduleButton} onPress={() => handleSchedule(outfit)}>
-                    <Text style={styles.scheduleButtonText}>Schedule</Text>
+                  <TouchableOpacity style={styles.actionButton} onPress={() => handleSchedule(outfit)}>
+                    <Text style={styles.actionButtonText}>Schedule</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -494,7 +502,9 @@ export default function Outfits() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 20,
+    paddingTop: 10,
+    paddingHorizontal: 10,
+    paddingBottom: 20,
   },
 
   chipContainer: {
@@ -611,14 +621,13 @@ const styles = StyleSheet.create({
     color: '#666',
     textTransform: 'capitalize',
   },
-  actionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  actionsContainer: {
     marginTop: 10,
+    width: '100%',
   },
   voteButtons: {
     flexDirection: 'row',
+    marginBottom: 10,
   },
   voteButton: {
     backgroundColor: '#f0f0f0',
@@ -629,6 +638,9 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  heartButton: {
+    marginLeft: 'auto', // Push to right if desired, or keep left
   },
   likedButton: {
     backgroundColor: '#d4edda',
@@ -643,18 +655,29 @@ const styles = StyleSheet.create({
   voteEmoji: {
     fontSize: 18,
   },
-  scheduleButton: {
-    backgroundColor: '#34C759',
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 10,
-    width: '100%',
+  actionButtonsRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 10,
+    flexWrap: 'wrap',
   },
-  scheduleButtonText: {
+  actionButton: {
+    backgroundColor: '#007AFF', // Standard Blue
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    minWidth: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 36, // Fixed Height
+  },
+  actionButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+    fontSize: 14,
   },
+  // Removed old scheduleButton styles to avoid conflict
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -726,37 +749,46 @@ const styles = StyleSheet.create({
   },
   voiceSection: {
     marginBottom: 20,
-    alignItems: 'center',
-    backgroundColor: '#F8E1F4', // Light Purple background
-    padding: 15,
-    borderRadius: 12,
-  },
-  voiceLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
+    width: '100%',
   },
   micButton: {
-    padding: 15,
-    borderRadius: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#fff',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  micIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f5',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 100,
-    height: 100,
-    // Removed borderWidth/borderColor to remove circle
-    elevation: 3,
+    marginRight: 10,
   },
-  micButtonActive: {
+  micIconActive: {
     backgroundColor: '#F3E5F5',
     borderColor: '#FF4081',
-    borderWidth: 2,
+    borderWidth: 1,
+  },
+  micText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333'
     transform: [{ scale: 1.1 }],
   },
   itemImage: {
-    width: 120,
-    height: 120,
+    width: 180, // 120 * 1.5
+    height: 180, // 120 * 1.5
     borderRadius: 5,
     marginBottom: 5,
   },

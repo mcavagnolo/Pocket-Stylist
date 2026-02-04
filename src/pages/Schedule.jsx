@@ -613,8 +613,8 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   smallImage: {
-    width: 75,
-    height: 75,
+    width: 112, // 75 * 1.5
+    height: 112, // 75 * 1.5
     borderRadius: 5,
     marginRight: 5,
   },
