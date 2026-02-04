@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIn
 import { useAuth } from '../context/AuthContext';
 import { getFavoriteOutfits, deleteFavoriteOutfit } from '../services/db';
 import { useCloset } from '../context/ClosetContext';
-import { FaTrash, FaChevronDown, FaChevronUp, FaInfoCircle } from 'react-icons/fa';
+import { FaTrash, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import TooltipModal from '../components/TooltipModal';
+import PageHeader from '../components/PageHeader';
 
 export default function Home() {
   const { currentUser } = useAuth();
@@ -92,12 +93,7 @@ export default function Home() {
   return (
     <ScrollView style={{flex: 1}} contentContainerStyle={styles.container}>
       
-      <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 20}}>
-         <Text style={styles.title}>Home</Text>
-         <TouchableOpacity onPress={() => setShowTooltip(true)} style={{marginLeft: 8}}>
-             <FaInfoCircle size={16} color="#FF4081" />
-         </TouchableOpacity>
-      </View>
+      <PageHeader title="Home" onInfoPress={() => setShowTooltip(true)} />
 
       <TooltipModal 
         visible={showTooltip} 
@@ -294,16 +290,11 @@ const styles = StyleSheet.create({
   deleteBtn: {
     padding: 5,
   },
-  title: {
-    fontSize: 28,
-    fontFamily: 'Poppins, sans-serif',
-    fontWeight: 'bold',
-    color: '#333',
-  },
   welcomeText: {
-    textAlign: 'center',
     fontSize: 16,
     color: '#666',
+    marginBottom: 20,
+    marginTop: 10,
   },
   section: {
     marginBottom: 20,

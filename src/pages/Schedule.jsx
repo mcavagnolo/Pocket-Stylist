@@ -4,9 +4,10 @@ import { useCloset } from '../context/ClosetContext';
 import { getWeatherForecast, getWeatherDescription, getLocationName } from '../services/weather';
 import { generateOutfitSuggestions } from '../services/openai';
 import { saveOutfitPreference, saveFavoriteOutfit } from '../services/db';
-import { FaTrash, FaThumbsUp, FaThumbsDown, FaHeart, FaRegHeart, FaInfoCircle } from 'react-icons/fa';
+import { FaTrash, FaThumbsUp, FaThumbsDown, FaHeart, FaRegHeart } from 'react-icons/fa';
 import { OCCASIONS, STYLES, TEMPS } from '../data/constants';
 import TooltipModal from '../components/TooltipModal';
+import PageHeader from '../components/PageHeader';
 
 export default function Schedule() {
   const { schedule, items, addToSchedule, removeFromSchedule, favorites, addFavorite, isItemAvailable } = useCloset();
@@ -181,16 +182,15 @@ export default function Schedule() {
 
   return (
     <View style={styles.container}>
-      <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, marginTop: 15, position: 'relative'}}>
-         <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            <Text style={styles.title}>Plan</Text>
-            <TouchableOpacity onPress={() => setShowTooltip(true)} style={{marginLeft: 8}}>
-                <FaInfoCircle size={16} color="#FF4081" />
-            </TouchableOpacity>
-         </View>
-         
-         {locationName ? <Text style={{fontSize: 14, fontWeight: 'bold', color: '#555'}}>📍 {locationName}</Text> : null}
-      </View>
+      <PageHeader 
+        title="Plan" 
+        onInfoPress={() => setShowTooltip(true)} 
+        rightContent={
+          locationName ? (
+            <Text style={{fontSize: 14, fontWeight: 'bold', color: '#555'}}>📍 {locationName}</Text>
+          ) : null
+        }
+      />
 
       <TooltipModal 
         visible={showTooltip} 
@@ -458,11 +458,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontFamily: 'Poppins, sans-serif',
-    fontWeight: 'bold',
   },
   locationText: {
     fontSize: 14, 

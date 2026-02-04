@@ -1,12 +1,13 @@
 import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, Dimensions, TouchableOpacity, Modal, ScrollView, Platform } from 'react-native';
 import { useNavigate } from 'react-router-dom';
-import { FaFilter, FaTimes, FaChevronDown, FaChevronUp, FaInfoCircle } from 'react-icons/fa';
+import { FaFilter, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { useCloset } from '../context/ClosetContext';
 import { addItemToDb, getUserItems } from '../services/db';
 import { useAuth } from '../context/AuthContext';
 import { resizeImage } from '../utils/image';
 import TooltipModal from '../components/TooltipModal';
+import PageHeader from '../components/PageHeader';
 
 const numColumns = 2;
 const screenWidth = Dimensions.get('window').width;
@@ -200,22 +201,26 @@ export default function Closet() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Your Closet</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <TouchableOpacity 
-            style={styles.filterButton} 
-            onPress={() => setFilterModalVisible(true)}
-          >
-            <FaFilter size={18} color="#333" />
-            {(activeFilters.type.length > 0 || activeFilters.tags.length > 0) && (
-              <View style={styles.filterBadge} />
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.addButton} onPress={() => setAddModalVisible(true)}>
-            <Text style={styles.addButtonText}>+ Add</Text>
-          </TouchableOpacity>
-        </View>
+      <PageHeader 
+        title="Your Closet"
+        onInfoPress={() => setShowTooltip(true)}
+        rightContent={
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <TouchableOpacity 
+              style={styles.filterButton} 
+              onPress={() => setFilterModalVisible(true)}
+            >
+              <FaFilter size={18} color="#333" />
+              {(activeFilters.type.length > 0 || activeFilters.tags.length > 0) && (
+                <View style={styles.filterBadge} />
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.addButton} onPress={() => setAddModalVisible(true)}>
+              <Text style={styles.addButtonText}>+ Add</Text>
+            </TouchableOpacity>
+          </View>
+        }
+      />
         
         <input
           type="file"
@@ -232,7 +237,6 @@ export default function Closet() {
           style={{ display: 'none' }}
           onChange={handleFileChange}
         />
-      </View>
       
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.listContent}>
         {CATEGORY_ORDER.map(section => {
@@ -487,10 +491,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingHorizontal: 10,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
+
   addButton: {
     backgroundColor: '#007AFF',
     paddingVertical: 8,

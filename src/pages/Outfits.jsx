@@ -8,7 +8,7 @@ import { getWeatherForecast, getLocationName, getWeatherDescription } from '../s
 import { saveOutfitPreference, saveFavoriteOutfit } from '../services/db';
 import { OCCASIONS, STYLES, TEMPS } from '../data/constants';
 import TooltipModal from '../components/TooltipModal';
-import { FaInfoCircle } from 'react-icons/fa';
+import PageHeader from '../components/PageHeader';
 
 export default function Outfits() {
   const { items, isItemAvailable, addToSchedule, schedule } = useCloset();
@@ -302,12 +302,20 @@ export default function Outfits() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={true}
     >
-      <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 10, position: 'relative'}}>
-         <Text style={styles.title}>Dressing Room</Text>
-         <TouchableOpacity onPress={() => setShowTooltip(true)} style={{position: 'absolute', right: 0}}>
-             <FaInfoCircle size={24} color="#FF4081" />
-         </TouchableOpacity>
-      </View>
+      <PageHeader 
+        title="Dressing Room" 
+        onInfoPress={() => setShowTooltip(true)} 
+        rightContent={
+             locationName ? (
+                 <View style={{alignItems: 'flex-end'}}>
+                     <Text style={{fontSize: 14, fontWeight: 'bold', color: '#555'}}>📍 {locationName}</Text>
+                     {currentTempRange && (
+                         <Text style={{fontSize: 12, color: '#777'}}>{currentTempRange} • {currentWeatherDesc}</Text>
+                     )}
+                 </View>
+             ) : null
+        }
+      />
       
       <TooltipModal 
         visible={showTooltip} 
@@ -316,15 +324,7 @@ export default function Outfits() {
         content="Select your destination, temp, and style OR just tell the AI what you want! Tap the mic to start."
       />
 
-       {/* Location Header - Kept existing logic */}
-       {locationName && (
-             <View style={{alignItems: 'center', marginBottom: 15 }}>
-                 <Text style={{fontSize: 14, fontWeight: 'bold', color: '#555'}}>📍 {locationName}</Text>
-                 {currentTempRange && (
-                     <Text style={{fontSize: 12, color: '#777'}}>{currentTempRange} • {currentWeatherDesc}</Text>
-                 )}
-             </View>
-         )}
+       {/* Location Header - Removed as it is now in PageHeader */}
 
       <View style={styles.form}>
         
@@ -496,10 +496,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 20,
   },
-  title: {
-    fontSize: 24,
-    marginTop: 10,
-  },
+
   chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
