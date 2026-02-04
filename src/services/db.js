@@ -1,4 +1,4 @@
-eBimport { getDb } from './firebase';
+import { getDb } from './firebase';
 import { 
   doc, 
   setDoc, 
