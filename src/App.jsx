@@ -58,6 +58,8 @@ const PageWrapper = ({ children, direction }) => (
   </motion.div>
 );
 
+import { Platform } from 'react-native';
+
 function AppContent() {
   const { currentUser } = useAuth();
   const [showAccount, setShowAccount] = useState(false);
@@ -77,15 +79,36 @@ function AppContent() {
   if (!currentUser) {
     return <Login />;
   }
+  
+  // Custom logo rendering for Web to support mix-blend-mode properly
+  const renderLogo = () => {
+    if (Platform.OS === 'web') {
+      return (
+        <img 
+            src={logo} 
+            alt="Pocket Stylist" 
+            style={{ 
+                width: 243, 
+                height: 70, 
+                objectFit: 'contain', 
+                mixBlendMode: 'multiply' 
+            }} 
+        />
+      );
+    }
+    return (
+       <Image 
+          source={{ uri: logo }} 
+          style={{ width: 243, height: 70, resizeMode: 'contain' }} 
+       />
+    );
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-          <Image 
-            source={{ uri: logo }} 
-            style={{ width: 243, height: 70, resizeMode: 'contain', mixBlendMode: 'multiply' }} 
-          />
+          {renderLogo()}
         </View>
         <TouchableOpacity onPress={() => setShowAccount(true)}>
           <FaUserCircle size={34} color={theme.colors.highlight} />

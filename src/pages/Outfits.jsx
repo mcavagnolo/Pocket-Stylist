@@ -270,6 +270,8 @@ export default function Outfits() {
         summary: outfit.summary,
         context: { destination, temperature, style }
       });
+      // Update local preference state to show heart filled
+      setPreferences(prev => ({ ...prev, [outfit.name]: 'favorite' })); 
       alert("Outfit saved to favorites!");
     } catch (error) {
       console.error("Error saving favorite:", error);
@@ -428,7 +430,9 @@ export default function Outfits() {
               </ScrollView>
               
               <View style={styles.actionsContainer}>
-                <View style={styles.voteButtons}>
+                {/* Unified Action Row */}
+                <View style={[styles.voteButtons, { justifyContent: 'flex-start', gap: 10, flexWrap: 'wrap' }]}>
+                  {/* Thumbs Up */}
                   <TouchableOpacity 
                     style={[styles.voteButton, preferences[index] === 'like' && styles.likedButton]} 
                     onPress={() => handlePreference(outfit, index, 'like')}
@@ -436,6 +440,8 @@ export default function Outfits() {
                   >
                     <Text style={styles.voteEmoji}>👍</Text>
                   </TouchableOpacity>
+                  
+                  {/* Thumbs Down */}
                   <TouchableOpacity 
                     style={[styles.voteButton, preferences[index] === 'dislike' && styles.dislikedButton]} 
                     onPress={() => handlePreference(outfit, index, 'dislike')}
@@ -443,22 +449,20 @@ export default function Outfits() {
                   >
                     <Text style={styles.voteEmoji}>👎</Text>
                   </TouchableOpacity>
-                  {/* Heart Action */}
+
+                  {/* Heart (Toggle) */}
                   <TouchableOpacity 
-                    style={[styles.voteButton, styles.heartButton]} 
+                    style={[styles.voteButton, (preferences[index] === 'favorite' || isFavorited(outfit)) && styles.favoriteButton]} 
                     onPress={() => handleSave(outfit)}
                   >
-                     <Text style={styles.voteEmoji}>❤️</Text>
+                     <Text style={styles.voteEmoji}>
+                        {(preferences[index] === 'favorite' || isFavorited(outfit)) ? '❤️' : '🤍'}
+                     </Text>
                   </TouchableOpacity>
-                </View>
-                
-                <View style={styles.actionButtonsRow}>
-                  <TouchableOpacity style={styles.actionButton} onPress={() => handleSave(outfit)}>
-                    <Text style={styles.actionButtonText}>Save Fav</Text>
-                  </TouchableOpacity>
-                  
+
+                  {/* Schedule Button */}
                   <TouchableOpacity style={styles.actionButton} onPress={() => handleSchedule(outfit)}>
-                    <Text style={styles.actionButtonText}>Schedule</Text>
+                    <Text style={styles.actionButtonText}>Let's Wear It!</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -662,6 +666,11 @@ const styles = StyleSheet.create({
     gap: 10,
     flexWrap: 'wrap',
   },
+  favoriteButton: {
+    backgroundColor: '#fff0f0',
+    borderWidth: 1,
+    borderColor: '#ffcccb',
+  },
   actionButton: {
     backgroundColor: '#007AFF', // Standard Blue
     paddingVertical: 8,
@@ -670,7 +679,7 @@ const styles = StyleSheet.create({
     minWidth: 80,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 36, // Fixed Height
+    height: 40, // Match vote button height
   },
   actionButtonText: {
     color: '#fff',
