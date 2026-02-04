@@ -145,8 +145,16 @@ export default function Schedule() {
       
       const result = await generateOutfitSuggestions(availableItems, criteria);
       
+      console.log("Generated Outfits:", result);
+
       if (Array.isArray(result)) {
-        setSuggestions(result);
+         // Sanitize result to ensure no crashes
+         const safeSuggestions = result.map(outfit => ({
+             name: String(outfit.name || "Outfit"),
+             reason: String(outfit.reason || outfit.summary || "No description"),
+             items: Array.isArray(outfit.items) ? outfit.items : []
+         }));
+        setSuggestions(safeSuggestions);
       }
     } catch (error) {
       console.error("Generation failed", error);
@@ -372,10 +380,13 @@ export default function Schedule() {
                         {Array.isArray(outfit.items) && outfit.items.map((id, idx) => {
                             const item = getItemDetails(id);
                             if (!item) return null;
+                            const imgUri = item.imageUri || item.image;
+                            if (!imgUri) return null;
+                            
                             return (
                             <Image 
                                 key={`${id}-${idx}`} 
-                                source={{ uri: item.imageUri || item.image }} 
+                                source={{ uri: imgUri }} 
                                 style={styles.smallImage} 
                             />
                             );
