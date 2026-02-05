@@ -414,35 +414,35 @@ export default function Schedule() {
                             );
                         })}
                         </ScrollView>
-                        <View style={{flexDirection: 'row', justifyContent: 'space-between', marginTop: 10}}>
-                            <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                                <TouchableOpacity 
-                                    style={[styles.iconButton, ratedOutfits[outfit.name] === 'like' && styles.activeIcon]}
-                                    onPress={() => handlePreference(outfit, 'like')}
-                                >
-                                    <FaThumbsUp size={16} color={ratedOutfits[outfit.name] === 'like' ? '#4CAF50' : '#666'} />
-                                </TouchableOpacity>
-                                <TouchableOpacity 
-                                    style={[styles.iconButton, ratedOutfits[outfit.name] === 'dislike' && styles.activeIcon, { marginLeft: 15 }]}
-                                    onPress={() => handlePreference(outfit, 'dislike')}
-                                >
-                                    <FaThumbsDown size={16} color={ratedOutfits[outfit.name] === 'dislike' ? '#F44336' : '#666'} />
-                                </TouchableOpacity>
-                            </View>
-                            <View style={{flexDirection: 'row'}}>
-                                <TouchableOpacity 
-                                    style={[styles.selectButton, { marginRight: 5, paddingHorizontal: 15 }]}
-                                    onPress={() => handleSelectOutfit(outfit)}
-                                >
-                                    <Text style={styles.selectButtonText}>Select</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity 
-                                    style={[styles.outlineButton, { marginLeft: 5 }]}
-                                    onPress={() => handleSaveFavorite(outfit)}
-                                >
-                                    <Text style={styles.outlineButtonText}>Save Fav</Text>
-                                </TouchableOpacity>
-                            </View>
+                        
+                        <View style={styles.actionButtonsRow}>
+                            <TouchableOpacity 
+                                style={[styles.voteButton, ratedOutfits[outfit.name] === 'like' && styles.likedButton]}
+                                onPress={() => handlePreference(outfit, 'like')}
+                            >
+                                <Text style={styles.voteEmoji}>👍</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity 
+                                style={[styles.voteButton, ratedOutfits[outfit.name] === 'dislike' && styles.dislikedButton]}
+                                onPress={() => handlePreference(outfit, 'dislike')}
+                            >
+                                <Text style={styles.voteEmoji}>👎</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity 
+                                style={[styles.voteButton, (isFavorited(outfit)) && styles.favoriteButton]}
+                                onPress={() => handleSaveFavorite(outfit)}
+                            >
+                                <Text style={styles.voteEmoji}>{isFavorited(outfit) ? '❤️' : '🤍'}</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity 
+                                style={styles.actionButton}
+                                onPress={() => handleSelectOutfit(outfit)}
+                            >
+                                <Text style={styles.actionButtonText}>Let's Wear It!</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
                     );
@@ -636,6 +636,55 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 10,
+    flexWrap: 'wrap',
+    marginTop: 10, // Added margin top for spacing from images
+  },
+  voteButton: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  likedButton: {
+    backgroundColor: '#d4edda',
+    borderWidth: 1,
+    borderColor: '#28a745',
+  },
+  dislikedButton: {
+    backgroundColor: '#f8d7da',
+    borderWidth: 1,
+    borderColor: '#dc3545',
+  },
+  favoriteButton: {
+    backgroundColor: '#fff0f0',
+    borderWidth: 1,
+    borderColor: '#ffcccb',
+  },
+  voteEmoji: {
+    fontSize: 18,
+  },
+  actionButton: {
+    backgroundColor: '#007AFF', // Standard Blue
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    minWidth: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 40, // Match vote button height
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
   suggestionCard: {
     borderWidth: 1,
