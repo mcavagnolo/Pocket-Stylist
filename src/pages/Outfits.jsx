@@ -257,7 +257,21 @@ export default function Outfits() {
         style: style || 'Any',
         includeOuterwear
       }, voicePrompt);
-      setSuggestions(results);
+
+      console.log("Stylist Generated Outfits:", results);
+
+      if (Array.isArray(results)) {
+         // Sanitize result to ensure no crashes
+         const safeSuggestions = results.map(outfit => ({
+             ...outfit,
+             name: String(outfit.name || "Outfit"),
+             summary: String(outfit.summary || outfit.reason || "No description"),
+             items: Array.isArray(outfit.items) ? outfit.items : []
+         }));
+        setSuggestions(safeSuggestions);
+      } else {
+        setSuggestions([]);
+      }
     } catch (error) {
       console.error("Failed to generate outfits", error);
       alert("Failed to generate suggestions. Please try again.");
@@ -346,7 +360,7 @@ export default function Outfits() {
         showsVerticalScrollIndicator={true}
     >
       <PageHeader 
-        title="Dressing Room" 
+        title="Stylist" 
         onInfoPress={() => setShowTooltip(true)} 
         rightContent={
              locationName ? (
@@ -454,19 +468,21 @@ export default function Outfits() {
       {suggestions.length > 0 && (
         <View style={styles.results}>
           <Text style={styles.subtitle}>Suggestions</Text>
-          {suggestions.map((outfit, index) => (
+          {suggestions.map((outfit, index) => {
+            if (!outfit) return null;
+            return (
             <View key={index} style={styles.outfitCard}>
-              <Text style={styles.outfitName}>{outfit.name}</Text>
-              <Text style={styles.outfitSummary}>{outfit.summary}</Text>
+              <Text style={styles.outfitName}>{String(outfit.name || "Outfit")}</Text>
+              <Text style={styles.outfitSummary}>{String(outfit.summary || "")}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.itemsRow}>
-                {outfit.items.map(itemId => {
+                {Array.isArray(outfit.items) && outfit.items.map((itemId, idx) => {
                   const item = getItemDetails(itemId);
                   if (!item) return null;
                   const imgUri = item.imageUri || item.image;
                   if (!imgUri) return null;
 
                   return (
-                    <View key={itemId} style={styles.itemPreview}>
+                    <View key={`${itemId}-${idx}`} style={styles.itemPreview}>
                       <SmartImage uri={imgUri} style={styles.itemImage} />
                     </View>
                   );
@@ -511,7 +527,8 @@ export default function Outfits() {
                 </View>
               </View>
             </View>
-          ))}
+            );
+          })}
         </View>
       )}
 
